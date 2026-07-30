@@ -11,8 +11,14 @@ flashcard that puts the phrase back in the document it came from.
 
 ## Running it
 
-No build step, no dependencies. It needs a static server only because it uses
-ES modules:
+Live at **https://brenlowportfolio-experiment.github.io/1/** (GitHub Pages,
+served from the default branch — `.nojekyll` keeps Pages from preprocessing
+the source).
+
+To run it locally instead: no build step, no dependencies, but it needs a
+static server because it uses ES modules — opening `index.html` directly from
+the filesystem gives a blank page, as browsers block module loading over
+`file://`.
 
 ```bash
 python3 -m http.server 8000
