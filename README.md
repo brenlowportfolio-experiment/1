@@ -63,6 +63,49 @@ leave.
 Keyboard: `space` reveals then grades *Good*; `1`–`4` grade directly; `c`
 toggles context.
 
+## Importing a real document
+
+**Import** takes a real judgment, contract or email and mines it for
+vocabulary. Paste the text (or drop a `.txt`), and the app reports what it
+already knows, then proposes the terms it doesn't.
+
+Finding unknown words is the hard part: a compound the lexicon has never seen
+doesn't announce itself, it just gets shattered into single characters. So
+candidates are proposed and scored on four signals — how often the span
+repeats, how tightly its characters bind (a PMI-style ratio against how often
+each half occurs alone), how freely it moves between contexts, and how much of
+it the segmenter failed to group. A span also qualifies structurally if it is
+*exactly* a hole in the segmentation, bounded by known words or punctuation;
+requiring the whole hole is what stops `平食品加` being proposed out of the
+middle of a company name.
+
+Pinyin is assembled automatically from the character dictionary, so in practice
+you supply meanings and nothing else. Accepted terms go into a user dictionary
+layered over the built-in one — and because the lexicon *is* the segmenter,
+teaching it 融资租赁 immediately changes how every document in the app is
+chunked and glossed.
+
+Then it helps you build a hypothetical that drills them. The app ships with no
+model and makes no network calls, so it can't write the document itself; what
+it does is assemble the brief — the vocabulary you just learned, the structural
+skeleton it detected in the source, and the confidentiality rules — as a prompt
+to run through whichever assistant you use. Paste the result back and it
+becomes a study document like any other, with its own cards and reviews.
+
+Two things happen on the way in:
+
+- **The source text is never persisted.** It's analysed in memory and discarded
+  when you leave. What survives is the derived vocabulary and the hypothetical
+  you generated — not a client's document sitting in `localStorage`.
+- **Paste-back is checked for verbatim reuse.** Anything sharing a long
+  identical run with the source is flagged before it can be saved. Stock legal
+  phrasing is excluded from that check — 判决如下 and 驳回原告的其他诉讼请求 are
+  formulae every judgment shares, and reusing them is the entire point — by
+  ignoring any passage the shipped hypotheticals already contain.
+
+The upshot is that a real document contributes its *language* to your study
+material without contributing its text.
+
 ## Layout
 
 ```
@@ -72,6 +115,9 @@ src/
   main.js             hash router
   lib/
     segment.js        forward maximum-matching segmenter
+    lexicon.js        built-in dictionary + user additions, merged
+    userdict.js       vocabulary you've taught it
+    discover.js       novel-term discovery, verbatim-overlap guard
     srs.js            SM-2 scheduling (pure functions)
     store.js          localStorage persistence, import/export
     dom.js            element helpers, pinyin-above-characters rendering
@@ -80,8 +126,9 @@ src/
     reader.js         read, hover, select, make cards
     review.js         flashcards
     deck.js           browse/edit cards, settings, data
+    import.js         mine a real document, generate a hypothetical
   data/
-    dictionary.js     820 entries — glosses AND word boundaries
+    dictionary.js     ~1,150 entries — glosses AND word boundaries
     contexts/         one file per context + registry
 docs/AUTHORING.md     adding contexts, documents and vocabulary
 ```

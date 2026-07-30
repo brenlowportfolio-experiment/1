@@ -9,6 +9,7 @@ const KEY = 'falv-zhongwen.v1';
 const DEFAULTS = {
   version: 1,
   cards: [],
+  userDocs: [], // hypotheticals generated from an uploaded source
   settings: {
     newPerDay: 12,
     showPinyinOnFront: true, // pinyin sits above the characters, as ruby text
@@ -120,6 +121,29 @@ export function recordReview(cardId, nextSrs) {
   c.srs = nextSrs;
   const k = dayKey();
   state.history[k] = (state.history[k] || 0) + 1;
+  persist();
+}
+
+// ── user-generated documents ─────────────────────────────────────────────
+
+export function getUserDocs() {
+  return state.userDocs || [];
+}
+
+export function addUserDoc(doc) {
+  const saved = {
+    ...doc,
+    id: doc.id || `ud_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`,
+    custom: true,
+    created: new Date().toISOString(),
+  };
+  state.userDocs.push(saved);
+  persist();
+  return saved;
+}
+
+export function deleteUserDoc(id) {
+  state.userDocs = state.userDocs.filter((d) => d.id !== id);
   persist();
 }
 

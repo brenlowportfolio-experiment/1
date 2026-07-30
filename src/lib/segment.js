@@ -3,7 +3,7 @@
 // glosses is the same dictionary that decides where word boundaries fall, so
 // every token the reader shows is a token we can actually explain.
 
-import { DICT, MAX_TERM_LEN } from '../data/dictionary.js';
+import { lexicon, maxTermLen } from './lexicon.js';
 
 const HAN = /[㐀-䶿一-鿿]/;
 
@@ -15,7 +15,7 @@ export function isHan(ch) {
  * Split a paragraph into tokens.
  * @returns {Array<{text, start, end, han, entry}>} offsets are into `text`.
  */
-export function segment(text, dict = DICT) {
+export function segment(text, dict = lexicon()) {
   const tokens = [];
   let i = 0;
 
@@ -30,7 +30,7 @@ export function segment(text, dict = DICT) {
     }
 
     let word = null;
-    const maxLen = Math.min(MAX_TERM_LEN, text.length - i);
+    const maxLen = Math.min(maxTermLen(), text.length - i);
     for (let len = maxLen; len >= 2; len--) {
       const cand = text.substr(i, len);
       if (dict[cand]) {
@@ -59,7 +59,7 @@ export function segment(text, dict = DICT) {
  * often not itself a dictionary headword (e.g. 支付全部价款). Falls back to
  * concatenating the pinyin of its parts so the card is never blank.
  */
-export function describeSpan(span, dict = DICT) {
+export function describeSpan(span, dict = lexicon()) {
   const exact = dict[span];
   if (exact) return { pinyin: exact[0], meaning: exact[1], exact: true };
 

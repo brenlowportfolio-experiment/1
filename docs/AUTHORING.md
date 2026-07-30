@@ -76,6 +76,24 @@ console.log([...missing].join(' '));
 
 The shipped corpus is at 100% coverage; keep it there.
 
+Two layers matter here, and they behave differently:
+
+- **`dictionary.js`** — reviewed, shipped, shared by everyone. Prefer adding
+  *characters* generously and *compounds* deliberately: broad character
+  coverage is what lets the importer assemble pinyin for terms it has never
+  seen, while every compound you add is one the importer will no longer offer
+  as a discovery.
+- **The user dictionary** (`userdict.js`, in `localStorage`) — whatever the
+  importer has been taught, layered on top and winning ties. Exportable as
+  JSON from the Import page, so a curated vocabulary can be moved between
+  machines or folded back into `dictionary.js` once it's worth shipping.
+
+Note the tension when editing the shipped dictionary: the sample document on
+the Import page is deliberately built around terms the dictionary *lacks*
+(融资租赁, 售后回租, 加速到期, 权利瑕疵, 优先受偿权, 案涉). Adding those to
+`dictionary.js` would leave the discovery demo with nothing to find. If you add
+them, give the sample new vocabulary to expose.
+
 ## Generating new hypotheticals
 
 Documents must be **hypothetical**: written in the register and structure of
@@ -106,3 +124,27 @@ A prompt that produces usable output:
 > paragraphs, with no translation or commentary.
 
 Then run the coverage snippet above and add whatever vocabulary is missing.
+
+## Generating from a real document
+
+The Import page automates the loop above: it mines a real judgment, contract or
+email for vocabulary, then assembles this same prompt pre-filled with the terms
+you accepted and the structural skeleton it detected in the source.
+
+Two invariants hold there, and any change to `src/views/import.js` should keep
+them:
+
+1. **The source is never persisted.** It lives in a local variable for the
+   session. Only the derived vocabulary and the generated hypothetical reach
+   `localStorage`.
+2. **Paste-back is checked against the source** by `verbatimOverlap()` in
+   `src/lib/discover.js` before it can be saved. The check excludes any passage
+   that also appears in the shipped corpus, on the basis that anything the
+   built-in hypotheticals already say is stock phrasing rather than something
+   unique to the user's document — so 判决如下 and 驳回原告的其他诉讼请求 don't
+   read as copying, while invented party names and facts do.
+
+If you add documents to the shipped corpus, you widen that boilerplate
+whitelist. That's usually right, but don't paste real text into
+`src/data/contexts/` to "improve" it — you would be teaching the plagiarism
+guard to ignore the very thing it exists to catch.

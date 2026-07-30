@@ -5,6 +5,7 @@ import * as library from './views/library.js';
 import * as reader from './views/reader.js';
 import * as review from './views/review.js';
 import * as deck from './views/deck.js';
+import * as importView from './views/import.js';
 import * as store from './lib/store.js';
 import { buildQueue } from './views/review.js';
 
@@ -18,7 +19,7 @@ function parseHash() {
   if (!h) return { view: 'library' };
   const [view, arg] = h.split('/');
   if (view === 'read' && arg) return { view: 'reader', docId: arg };
-  if (['library', 'review', 'deck'].includes(view)) return { view };
+  if (['library', 'review', 'deck', 'import'].includes(view)) return { view };
   return { view: 'library' };
 }
 
@@ -46,6 +47,7 @@ function route() {
   if (r.view === 'reader') teardown = reader.render(outlet, { docId: r.docId, focus: ctx.focus });
   else if (r.view === 'review') teardown = review.render(outlet, ctx);
   else if (r.view === 'deck') teardown = deck.render(outlet, ctx);
+  else if (r.view === 'import') teardown = importView.render(outlet, ctx);
   else teardown = library.render(outlet, ctx);
 
   paintNav(r.view);
@@ -58,6 +60,7 @@ function paintNav(active) {
     ['library', 'Contexts', '#/library'],
     ['review', 'Review', '#/review'],
     ['deck', 'Deck', '#/deck'],
+    ['import', 'Import', '#/import'],
   ];
   for (const [id, label, href] of items) {
     nav.append(

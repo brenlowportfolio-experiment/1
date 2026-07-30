@@ -1,7 +1,7 @@
 // Library — browse contexts and the hypotheticals inside them.
 
 import { el, clear } from '../lib/dom.js';
-import { CONTEXTS } from '../data/contexts/index.js';
+import { contextsWithDocs } from '../data/contexts/index.js';
 import * as store from '../lib/store.js';
 
 export function render(root, { navigate }) {
@@ -26,7 +26,7 @@ export function render(root, { navigate }) {
     ]),
   );
 
-  for (const ctx of CONTEXTS) {
+  for (const ctx of contextsWithDocs()) {
     const section = el('section', { class: 'ctx' });
     section.append(
       el('div', { class: 'ctx-head' }, [
@@ -49,7 +49,10 @@ export function render(root, { navigate }) {
             onclick: () => navigate({ view: 'reader', docId: d.id }),
           },
           [
-            el('span', { class: 'doc-card-level', text: d.level }),
+            el('span', { class: 'doc-card-level' }, [
+              d.level,
+              d.custom && el('span', { class: 'mine-tag', text: 'yours' }),
+            ]),
             el('span', { class: 'doc-card-zh', text: d.titleZh }),
             el('span', { class: 'doc-card-en', text: d.title }),
             el('span', { class: 'doc-card-sum', text: d.summary }),
