@@ -22,6 +22,7 @@ import { segment } from '../lib/segment.js';
 import { builtInCount } from '../lib/lexicon.js';
 import { sectionize, classify, cnToArabic } from '../lib/sectionize.js';
 import { normalizeText } from '../lib/normalize.js';
+import { loadGlossary, glossTerm, glossaryReady, SOURCE_LABEL } from '../lib/translate.js';
 import { extractPdfText } from '../lib/pdftext.js';
 import * as userdict from '../lib/userdict.js';
 import * as store from '../lib/store.js';
@@ -184,18 +185,68 @@ export function render(root, { navigate }) {
 
     picks = new Map();
     for (const c of analysis.candidates) {
+      const g = glossTerm(c.term);
       picks.set(c.term, {
-        pinyin: c.pinyin,
-        meaning: '',
+        pinyin: g.pinyin || c.pinyin,
+        meaning: g.meaning,
+        source: g.source,
+        touched: false,
+        userSet: false,
         tag: 'law',
-        on: c.route === 'statistical' && c.freq >= 2,
+        on: shouldPreselect(c, g.source),
       });
     }
     paintReport();
+    fillTranslations();
     paintMake();
     reportSec.hidden = false;
     makeSec.hidden = false;
     reportSec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  // Which candidates arrive already ticked.
+  //
+  // Repetition alone is not enough. 权人 repeats constantly and binds tightly,
+  // but it is the tail of 抵押权人 and 质权人 rather than a word — and once
+  // every row carries a plausible-looking English gloss, a pre-ticked fragment
+  // is easy to save without noticing. A whole-word hit in either dictionary is
+  // far better evidence that the span is real, so only those are preselected.
+  // Terms that could only be composed from their parts still appear, ranked
+  // where they were, waiting to be judged.
+  function shouldPreselect(candidate, source) {
+    if (source !== 'cedict' && source !== 'curated') return false;
+    return candidate.route === 'statistical' && candidate.freq >= 2;
+  }
+
+  // The fallback glossary is a few megabytes, so the candidate list is painted
+  // immediately from what is already in memory and improved when it lands.
+  // Anything the user has already typed is left alone.
+  async function fillTranslations() {
+    if (glossaryReady()) return;
+    const note = reportSec.querySelector('.gloss-status');
+    if (note) {
+      note.hidden = false;
+      note.textContent = 'Looking up English for the rest…';
+    }
+    try {
+      await loadGlossary();
+    } catch {
+      if (note) note.textContent = 'Could not load the translation glossary — meanings below are built from the parts where possible.';
+      return;
+    }
+    if (!analysis) return;
+    for (const c of analysis.candidates) {
+      const p = picks.get(c.term);
+      if (!p || p.touched) continue;
+      const g = glossTerm(c.term);
+      if (g.meaning) {
+        p.meaning = g.meaning;
+        p.pinyin = g.pinyin || p.pinyin;
+        p.source = g.source;
+      }
+      if (!p.userSet) p.on = shouldPreselect(c, p.source);
+    }
+    paintReport();
   }
 
   function paintReport() {
@@ -238,8 +289,9 @@ export function render(root, { navigate }) {
       el('p', {
         class: 'panel-note',
         text:
-          'Candidates are ranked by how word-like they look: how often they repeat, how tightly the characters bind, how freely the span moves between contexts, and how much of it the current lexicon failed to group. Add a meaning before saving — that’s the bit no algorithm here can do for you.',
+          'Candidates are ranked by how word-like they look: how often they repeat, how tightly the characters bind, how freely the span moves between contexts, and how much of it the current lexicon failed to group. English is filled in automatically — treat it as a first draft and correct anything that reads wrong before saving.',
       }),
+      el('p', { class: 'hint gloss-status', hidden: 'hidden' }),
     );
 
     const bulk = el('div', { class: 'row bulk' }, [
@@ -284,6 +336,7 @@ export function render(root, { navigate }) {
           checked: p.on,
           onchange: (e) => {
             p.on = e.target.checked;
+            p.userSet = true;
             row.classList.toggle('on', p.on);
             paintSave();
           },
@@ -304,7 +357,12 @@ export function render(root, { navigate }) {
                     ? `cohesion ${c.cohesion.toFixed(1)}, edge freedom ${c.freedom.toFixed(2)}`
                     : 'The lexicon could not group any of these characters into a word',
               }),
-              !c.pinyinComplete &&
+              p.source && p.source !== 'none' &&
+                el('span', {
+                  class: `cand-src ${p.touched ? 'edited' : p.source}`,
+                  text: p.touched ? 'edited' : SOURCE_LABEL[p.source],
+                }),
+              p.pinyin.includes('?') &&
                 el('span', { class: 'cand-warn', text: 'pinyin needs checking' }),
             ]),
             el('div', { class: 'cand-fields' }, [
@@ -316,11 +374,20 @@ export function render(root, { navigate }) {
                 oninput: (e) => (p.pinyin = e.target.value),
               }),
               el('input', {
-                class: 'cand-meaning',
+                class: `cand-meaning src-${p.source || 'none'}`,
                 value: p.meaning,
                 placeholder: 'English meaning',
+                title: SOURCE_LABEL[p.source] || '',
                 oninput: (e) => {
                   p.meaning = e.target.value;
+                  p.touched = true;
+                  p.userSet = true;
+                  e.target.className = 'cand-meaning src-edited';
+                  const chip = row.querySelector('.cand-src');
+                  if (chip) {
+                    chip.className = 'cand-src edited';
+                    chip.textContent = 'edited';
+                  }
                   // Typing a meaning is itself a vote to keep the term.
                   if (e.target.value && !p.on) {
                     p.on = true;

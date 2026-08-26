@@ -114,7 +114,12 @@ export function discover(text, { limit = 80 } = {}) {
         // character uncovered, and known words or punctuation on both sides.
         // Requiring the *whole* hole is what stops 平食品加 being proposed out
         // of the middle of 安平食品加工有限公司; only the complete gap counts.
-        const statistical = f >= 2 && coh >= 1.5 && free >= 0.6;
+        // `uncovered > 0` matters: without it, 权人 gets proposed because it
+        // repeats and binds tightly — but every occurrence sits inside 债权人,
+        // which the lexicon already knows. A span the lexicon has already
+        // grouped into known words is an artefact of the sliding window, not
+        // vocabulary. Spans that also occur standalone still qualify there.
+        const statistical = f >= 2 && coh >= 1.5 && free >= 0.6 && uncovered > 0;
         const structural = uncovered === 1 && n <= 4 && isWholeHole(flags, i, i + n);
         if (!statistical && !structural) continue;
 

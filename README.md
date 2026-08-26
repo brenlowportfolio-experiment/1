@@ -120,11 +120,31 @@ it the segmenter failed to group. A span also qualifies structurally if it is
 requiring the whole hole is what stops `平食品加` being proposed out of the
 middle of a company name.
 
-Pinyin is assembled automatically from the character dictionary, so in practice
-you supply meanings and nothing else. Accepted terms go into a user dictionary
-layered over the built-in one — and because the lexicon *is* the segmenter,
-teaching it 融资租赁 immediately changes how every document in the app is
-chunked and glossed.
+**English is filled in automatically.** Every candidate arrives with a draft
+meaning from one of three sources, shown on the row so you know how much to
+trust it:
+
+| Source | What it means |
+|---|---|
+| from the legal dictionary | The curated entry in `dictionary.js`. Always preferred — "违约金 liquidated damages, penalty" beats CC-CEDICT's bare "penalty (fee)" |
+| auto-translated | A whole-word hit in CC-CEDICT (~111k entries) |
+| built from the parts | Composed: 融资租赁 → "financing + lease". Shown in italic, because it is a construction rather than a definition |
+
+None of it is a translator, and it is not meant to be right — it is a first
+draft to correct. Every field stays editable, and typing in one marks the row
+*edited* so the automatic pass never overwrites your wording. In testing across
+a statute and a judgment, no candidate was left blank.
+
+The glossary is ~6.9 MB, so it is fetched only when a document is actually
+imported, and the list paints immediately from what's already in memory and
+improves when it lands. Rows are pre-ticked only when a dictionary knows the
+whole word: repetition alone would pre-tick 权人, which is not a word but the
+tail of 抵押权人 and 质权人, and a pre-ticked fragment carrying a plausible
+gloss is easy to save without noticing.
+
+Accepted terms go into a user dictionary layered over the built-in one — and
+because the lexicon *is* the segmenter, teaching it 融资租赁 immediately changes
+how every document in the app is chunked and glossed.
 
 Then it helps you build a hypothetical that drills them. The app ships with no
 model and makes no network calls, so it can't write the document itself; what
@@ -160,6 +180,7 @@ src/
     userdict.js       vocabulary you've taught it
     discover.js       novel-term discovery, verbatim-overlap guard
     normalize.js      repairs Kangxi radicals and other PDF-extraction damage
+    translate.js      automatic English: curated -> CC-CEDICT -> composed
     sectionize.js     cuts a long statute into study-sized sections; classifier
     pdftext.js        PDF text extraction (loads pdf.js on demand)
     srs.js            SM-2 scheduling (pure functions)
@@ -174,7 +195,8 @@ src/
   data/
     dictionary.js     ~1,170 entries — glosses AND word boundaries
     contexts/         one file per context + registry
-vendor/               pdf.js, checked in (see vendor/README.md)
+vendor/               pdf.js and CC-CEDICT, checked in (see vendor/NOTICE.md)
+tools/                build script for the CC-CEDICT glossary
 docs/AUTHORING.md     adding contexts, documents and vocabulary
 ```
 

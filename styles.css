@@ -493,3 +493,16 @@ h2 { font-size: 19px; margin: 0; }
 @media (max-width: 620px) {
   .make-tabs { grid-template-columns: 1fr; }
 }
+
+/* ── translation provenance ─────────────────────────────────────────── */
+.cand-src {
+  font-size: 10px; letter-spacing: .05em; padding: 2px 7px; border-radius: 4px;
+  background: var(--line); color: var(--ink-3);
+}
+.cand-src.cedict { background: color-mix(in srgb, var(--blue) 14%, transparent); color: var(--blue); }
+.cand-src.curated { background: color-mix(in srgb, var(--ok) 16%, transparent); color: var(--ok); }
+.cand-src.composed, .cand-src.partial { background: color-mix(in srgb, var(--warn) 15%, transparent); color: var(--warn); }
+.cand-src.edited { background: var(--ink); color: var(--paper); }
+.cand-meaning.src-composed, .cand-meaning.src-partial { font-style: italic; }
+.cand-meaning.src-edited { border-color: var(--ink-3); font-style: normal; }
+.gloss-status { margin: 6px 0 0; }
