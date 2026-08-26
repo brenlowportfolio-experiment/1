@@ -73,8 +73,9 @@ export function render(root, { docId, focus } = {}) {
         ),
       el('p', {
         class: 'doc-disclaimer',
-        text:
-          'Hypothetical document. Parties, courts, case numbers and facts are invented for language practice.',
+        text: doc.verbatim
+          ? 'Quoted verbatim. This text is reproduced as written, not rewritten for practice.'
+          : 'Hypothetical document. Parties, courts, case numbers and facts are invented for language practice.',
       }),
     ]),
   );

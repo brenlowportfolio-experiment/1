@@ -1,15 +1,28 @@
-// Import — mine a real document for vocabulary, then build a fresh
-// hypothetical that exercises it.
+// Import — mine a real document for vocabulary, then turn it into study
+// material one of two ways.
 //
-// The uploaded text is analysed in memory and deliberately never persisted:
-// what survives the session is the derived vocabulary and whatever hypothetical
-// you generate from it, not the source. That keeps a real client document from
-// turning into study material.
+// Which way depends on what the document is, and the distinction is the whole
+// design:
+//
+//   Verbatim   — for public law and text you hold the rights to. A statute's
+//                exact wording is the object of study; paraphrasing 第五百七十七条
+//                and still calling it 第五百七十七条 would be pointless. Sections
+//                are quoted as enacted.
+//
+//   Hypothetical — for anything belonging to a client or counterparty. The
+//                document contributes its language and never its text; what
+//                gets saved is a fresh document written to exercise the same
+//                vocabulary.
+//
+// Either way the source itself is analysed in memory and never persisted.
 
 import { el, clear, append, ruby } from '../lib/dom.js';
-import { discover, verbatimOverlap, guessPinyin } from '../lib/discover.js';
+import { discover, verbatimOverlap } from '../lib/discover.js';
 import { segment } from '../lib/segment.js';
-import { lexicon, builtInCount } from '../lib/lexicon.js';
+import { builtInCount } from '../lib/lexicon.js';
+import { sectionize, classify, cnToArabic } from '../lib/sectionize.js';
+import { normalizeText } from '../lib/normalize.js';
+import { extractPdfText } from '../lib/pdftext.js';
 import * as userdict from '../lib/userdict.js';
 import * as store from '../lib/store.js';
 import { CONTEXTS } from '../data/contexts/index.js';
@@ -19,6 +32,7 @@ const TYPE_LABEL = {
   judgments: '民事判决书 / civil judgment',
   contracts: '合同 / contract',
   emails: '往来邮件 / professional correspondence',
+  statutes: '法律法规 / statute or regulation',
 };
 
 export function render(root, { navigate }) {
@@ -26,24 +40,27 @@ export function render(root, { navigate }) {
 
   let sourceText = '';
   let analysis = null;
+  let cut = null; // sectionize() result
+  let kind = null; // classify() result
   let picks = new Map(); // term -> {pinyin, meaning, tag, on}
+  let mode = 'verbatim';
 
   root.append(
     el('header', { class: 'page-head' }, [
-      el('h1', { text: 'Import & generate' }),
+      el('h1', { text: 'Import' }),
       el('p', {
         class: 'lede',
         text:
-          'Feed the app a real judgment, contract or email. It finds the vocabulary it doesn’t yet know, learns it, then helps you build a hypothetical that drills those terms.',
+          'Feed the app a real statute, judgment, contract or email. It works out what the document is, finds the vocabulary it doesn’t yet know, and turns a manageable section into study material.',
       }),
     ]),
   );
 
   const sourceSec = el('section', { class: 'panel' });
   const reportSec = el('section', { class: 'panel', hidden: 'hidden' });
-  const genSec = el('section', { class: 'panel', hidden: 'hidden' });
+  const makeSec = el('section', { class: 'panel', hidden: 'hidden' });
   const manageSec = el('section', { class: 'panel' });
-  root.append(sourceSec, reportSec, genSec, manageSec);
+  root.append(sourceSec, reportSec, makeSec, manageSec);
 
   // ── 1. source ────────────────────────────────────────────────────────────
   const textarea = el('textarea', {
@@ -54,22 +71,47 @@ export function render(root, { navigate }) {
     spellcheck: 'false',
   });
 
+  const status = el('p', { class: 'panel-note file-status', hidden: 'hidden' });
+
+  async function loadFile(f) {
+    if (!f) return;
+    try {
+      if (/\.pdf$/i.test(f.name) || f.type === 'application/pdf') {
+        status.hidden = false;
+        status.textContent = `Reading ${f.name} \u2014 loading the PDF engine\u2026`;
+        const buf = await f.arrayBuffer();
+        const text = await extractPdfText(buf, (done, total) => {
+          status.textContent = `Reading ${f.name} \u2014 page ${done} of ${total}\u2026`;
+        });
+        if (countHan(text) < 20) {
+          status.textContent =
+            'No Chinese text found. If this PDF is a scan it holds images rather than text, and would need OCR first.';
+          return;
+        }
+        textarea.value = text;
+        status.textContent = `${f.name}: ${countHan(text).toLocaleString()} Chinese characters extracted.`;
+      } else {
+        const text = await f.text();
+        if (/\u0000/.test(text) || countHan(text) < 20) {
+          status.hidden = false;
+          status.textContent =
+            'That file does not look like readable Chinese text. Word files need opening in Word first \u2014 copy the text and paste it in.';
+          return;
+        }
+        textarea.value = text;
+        status.hidden = true;
+      }
+      analyse();
+    } catch (err) {
+      status.hidden = false;
+      status.textContent = `Could not read that file: ${err.message}`;
+    }
+  }
+
   const fileInput = el('input', {
     type: 'file',
-    accept: '.txt,.md,.csv,text/plain',
-    onchange: async (e) => {
-      const f = e.target.files[0];
-      if (!f) return;
-      const text = await f.text();
-      if (/\u0000/.test(text) || countHan(text) < 20) {
-        alert(
-          'That file doesn’t look like readable Chinese text.\n\nPDF and Word files need to be opened in their own application first — copy the text and paste it in.',
-        );
-        return;
-      }
-      textarea.value = text;
-      analyse();
-    },
+    accept: '.pdf,.txt,.md,.csv,application/pdf,text/plain',
+    onchange: (e) => loadFile(e.target.files[0]),
   });
 
   textarea.addEventListener('dragover', (e) => {
@@ -77,13 +119,10 @@ export function render(root, { navigate }) {
     textarea.classList.add('dropping');
   });
   textarea.addEventListener('dragleave', () => textarea.classList.remove('dropping'));
-  textarea.addEventListener('drop', async (e) => {
+  textarea.addEventListener('drop', (e) => {
     e.preventDefault();
     textarea.classList.remove('dropping');
-    const f = e.dataTransfer.files[0];
-    if (!f) return;
-    textarea.value = await f.text();
-    analyse();
+    loadFile(e.dataTransfer.files[0]);
   });
 
   append(
@@ -95,9 +134,10 @@ export function render(root, { navigate }) {
         'Analysed entirely in your browser. The source text is held in memory for this session only — it is never written to storage and never becomes a study document.',
     }),
     textarea,
+    status,
     el('div', { class: 'row' }, [
       el('button', { class: 'btn primary', text: 'Analyse', onclick: () => analyse() }),
-      el('label', { class: 'btn ghost file' }, ['Upload .txt', fileInput]),
+      el('label', { class: 'btn ghost file' }, ['Upload PDF or .txt', fileInput]),
       el('button', {
         class: 'btn ghost',
         text: 'Try a sample',
@@ -113,8 +153,11 @@ export function render(root, { navigate }) {
           textarea.value = '';
           sourceText = '';
           analysis = null;
+          cut = null;
+          kind = null;
+          status.hidden = true;
           reportSec.hidden = true;
-          genSec.hidden = true;
+          makeSec.hidden = true;
         },
       }),
     ]),
@@ -122,12 +165,23 @@ export function render(root, { navigate }) {
 
   // ── 2. analysis ──────────────────────────────────────────────────────────
   function analyse() {
-    sourceText = textarea.value.trim();
+    // Normalise first. PDF extraction hands back Kangxi radicals that look
+    // like ordinary characters but match nothing, so everything downstream
+    // depends on repairing them before a single lookup happens.
+    sourceText = normalizeText(textarea.value).trim();
     if (countHan(sourceText) < 30) {
-      alert('Paste a bit more text — at least a paragraph or two of Chinese.');
+      alert('Paste a bit more text \u2014 at least a paragraph or two of Chinese.');
       return;
     }
+    textarea.value = sourceText;
+
+    kind = classify(sourceText);
+    cut = sectionize(sourceText);
     analysis = discover(sourceText);
+
+    // Public law is quoted; anything else defaults to the safer path.
+    mode = kind.contextId === 'statutes' ? 'verbatim' : 'hypothetical';
+
     picks = new Map();
     for (const c of analysis.candidates) {
       picks.set(c.term, {
@@ -138,8 +192,9 @@ export function render(root, { navigate }) {
       });
     }
     paintReport();
+    paintMake();
     reportSec.hidden = false;
-    genSec.hidden = true;
+    makeSec.hidden = false;
     reportSec.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
@@ -156,14 +211,7 @@ export function render(root, { navigate }) {
         stat(s.knownTerms, 'known terms used'),
         stat(analysis.candidates.length, 'novel candidates'),
       ]),
-      s.docType &&
-        el('p', { class: 'panel-note' }, [
-          'Reads like a ',
-          el('b', { text: TYPE_LABEL[s.docType] || s.docType }),
-          s.outline.length
-            ? `. Structural markers, in order: ${s.outline.join(' → ')}`
-            : '',
-        ]),
+      classBanner(),
     );
 
     // Known terms — evidence the lexicon is doing its job, and a quick way to
@@ -328,9 +376,9 @@ export function render(root, { navigate }) {
             );
             toast(`${added} new term${added === 1 ? '' : 's'} learned`);
             paintManage();
-            paintGenerator(chosen.map(([term, v]) => ({ term, ...v })));
-            genSec.hidden = false;
-            genSec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            paintMake();
+            makeSec.hidden = false;
+            makeSec.scrollIntoView({ behavior: 'smooth', block: 'start' });
           },
         }),
         missing
@@ -342,8 +390,264 @@ export function render(root, { navigate }) {
     paintCandidates();
   }
 
+  // ── classification banner ────────────────────────────────────────────────
+  function classBanner() {
+    if (!kind || !kind.contextId) return null;
+    const ctx = CONTEXTS.find((c) => c.id === kind.contextId);
+    const line = el('div', { class: `class-banner ${kind.confident ? 'sure' : 'unsure'}` }, [
+      el('span', { class: 'cb-icon', text: ctx ? ctx.icon : '?' }),
+      el('div', {}, [
+        el('div', { class: 'cb-head' }, [
+          kind.confident ? 'This is a ' : 'This looks like a ',
+          el('b', { text: TYPE_LABEL[kind.contextId] || kind.contextId }),
+          kind.confident ? '' : ' — check before saving',
+        ]),
+        el('div', {
+          class: 'cb-sub',
+          text: cut && cut.meta.articles
+            ? `${cut.meta.articles} articles across ${cut.meta.chapters.length} chapters, cut into ${cut.sections.length} readable sections.`
+            : `Filed under ${ctx ? ctx.name : kind.contextId}.`,
+        }),
+      ]),
+    ]);
+    return line;
+  }
+
+  // ── 3. turn it into study material ───────────────────────────────────────
+  function paintMake() {
+    clear(makeSec);
+    const chosenTerms = [...picks.entries()]
+      .filter(([, v]) => v.on)
+      .map(([term, v]) => ({ term, ...v }));
+
+    const body = el('div', { class: 'make-body' });
+
+    const tab = (id, label, sub) =>
+      el('button', {
+        class: `make-tab${mode === id ? ' on' : ''}`,
+        onclick: () => {
+          mode = id;
+          paintMake();
+        },
+      }, [
+        el('span', { class: 'mt-label', text: label }),
+        el('span', { class: 'mt-sub', text: sub }),
+      ]);
+
+    append(
+      makeSec,
+      el('h2', { text: '3 · Turn it into study material' }),
+      el('div', { class: 'make-tabs' }, [
+        tab('verbatim', 'Use verbatim', 'Public law, or text you hold the rights to'),
+        tab('hypothetical', 'Generate a hypothetical', "Anything belonging to a client or counterparty"),
+      ]),
+      body,
+    );
+
+    if (mode === 'verbatim') paintVerbatim(body);
+    else paintGenerator(body, chosenTerms);
+  }
+
+  // ── verbatim: pick sections and save them as they stand ──────────────────
+  function paintVerbatim(root) {
+    if (!cut || !cut.sections.length) {
+      root.append(el('p', { class: 'empty', text: 'Nothing to cut into sections — the document is too short.' }));
+      return;
+    }
+
+    const m = cut.meta;
+    const chosen = new Set();
+    let attested = false;
+
+    append(
+      root,
+      el('p', {
+        class: 'panel-note',
+        text:
+          'The document is cut at its own seams — never mid-article — into sections of roughly 400 characters. Pick the ones you want; each becomes a study document you can read, gloss and make cards from, quoted exactly as written.',
+      }),
+      el('div', { class: 'stats' }, [
+        stat(m.articles || m.units, m.articles ? 'articles' : 'passages'),
+        stat(cut.sections.length, 'sections'),
+        stat(Math.round(m.han / Math.max(cut.sections.length, 1)), 'chars each (avg)'),
+        stat(m.translationLinesDropped, 'translation lines dropped'),
+      ]),
+    );
+
+    if (m.translationLinesDropped > 20) {
+      root.append(
+        el('p', {
+          class: 'hint',
+          text: `This looks like a bilingual source. ${m.translationLinesDropped} English lines were removed so the sections are Chinese throughout — the translation would otherwise halve the Chinese in every one.`,
+        }),
+      );
+    }
+
+    // Source naming — the labels every saved section inherits.
+    const fSourceZh = genField('出处 Source (Chinese)', el('input', {
+      class: 'gen-in', value: m.sourceTitle || '', placeholder: '例：中华人民共和国民法典',
+    }));
+    const fSourceEn = genField('Source (English)', el('input', {
+      class: 'gen-in', placeholder: 'e.g. PRC Civil Code, Book III',
+    }));
+    const fContext = genField('Context', selectEl(
+      CONTEXTS.map((c) => c.id),
+      kind?.contextId || 'statutes',
+      CONTEXTS.map((c) => c.name),
+    ));
+    const fLevel = genField('Level', selectEl(['B1', 'B2', 'B2+', 'C1'], 'B2+'));
+    root.append(el('div', { class: 'gen-fields' }, [fSourceZh, fSourceEn, fContext, fLevel]));
+
+    // Chapter filter — 100+ sections is unusable as one flat list.
+    const chapters = [...new Set(cut.sections.map((x) => x.chapter).filter(Boolean))];
+    let chapterFilter = 'all';
+    const filterRow = el('div', { class: 'row' });
+    const list = el('div', { class: 'section-list' });
+    const footer = el('div', { class: 'row save-row' });
+
+    if (chapters.length > 1) {
+      filterRow.append(
+        el('label', { class: 'gen-field inline' }, [
+          el('span', { text: 'Chapter' }),
+          el('select', {
+            class: 'gen-in',
+            onchange: (e) => {
+              chapterFilter = e.target.value;
+              paintList();
+            },
+          }, [
+            el('option', { value: 'all', text: `All chapters (${chapters.length})` }),
+            ...chapters.map((c) => el('option', { value: c, text: c })),
+          ]),
+        ]),
+      );
+    }
+    filterRow.append(
+      el('button', {
+        class: 'btn ghost small',
+        text: 'Select visible',
+        onclick: () => {
+          visible().forEach((x) => chosen.add(x.i));
+          paintList();
+        },
+      }),
+      el('button', {
+        class: 'btn ghost small',
+        text: 'Clear selection',
+        onclick: () => {
+          chosen.clear();
+          paintList();
+        },
+      }),
+    );
+    root.append(filterRow, list, footer);
+
+    function visible() {
+      return cut.sections
+        .map((sec, i) => ({ sec, i }))
+        .filter(({ sec }) => chapterFilter === 'all' || sec.chapter === chapterFilter);
+    }
+
+    function paintList() {
+      clear(list);
+      for (const { sec, i } of visible()) {
+        const on = chosen.has(i);
+        const row = el('label', { class: `sect${on ? ' on' : ''}` });
+        append(
+          row,
+          el('input', {
+            type: 'checkbox',
+            checked: on,
+            onchange: (e) => {
+              if (e.target.checked) chosen.add(i);
+              else chosen.delete(i);
+              row.classList.toggle('on', e.target.checked);
+              paintFooter();
+            },
+          }),
+          el('div', { class: 'sect-main' }, [
+            el('div', { class: 'sect-head' }, [
+              el('span', { class: 'sect-title', text: sec.titleZh }),
+              el('span', { class: 'sect-meta', text: `${sec.han} chars · ${sec.articleCount || sec.paragraphs.length} ${sec.articleCount ? 'articles' : 'paras'}` }),
+            ]),
+            el('div', { class: 'sect-preview', text: sec.paragraphs[0].slice(0, 110) }),
+          ]),
+        );
+        list.append(row);
+      }
+      paintFooter();
+    }
+
+    function paintFooter() {
+      clear(footer);
+      const attest = el('label', { class: 'attest' }, [
+        el('input', {
+          type: 'checkbox',
+          checked: attested,
+          onchange: (e) => {
+            attested = e.target.checked;
+            paintFooter();
+          },
+        }),
+        el('span', {
+          text:
+            'This is public law, or I hold the rights to reproduce it. It will be stored verbatim in this browser.',
+        }),
+      ]);
+      append(
+        footer,
+        attest,
+        el('button', {
+          class: 'btn primary',
+          disabled: !attested || chosen.size === 0,
+          text: chosen.size
+            ? `Add ${chosen.size} section${chosen.size === 1 ? '' : 's'} as study documents`
+            : 'Select some sections',
+          onclick: save,
+        }),
+      );
+    }
+
+    function save() {
+      const zh = fSourceZh.querySelector('input').value.trim();
+      const en = fSourceEn.querySelector('input').value.trim();
+      const contextId = fContext.querySelector('select').value;
+      const level = fLevel.querySelector('select').value;
+      const ids = [...chosen].sort((a, b) => a - b);
+      let first = null;
+
+      for (const i of ids) {
+        const sec = cut.sections[i];
+        const arabic = arabicRange(sec.range);
+        const doc = store.addUserDoc({
+          contextId,
+          level,
+          titleZh: [zh && `《${zh}》`, sec.titleZh].filter(Boolean).join(''),
+          title: [en || 'Imported source', arabic && `Arts. ${arabic}`].filter(Boolean).join(' — '),
+          summary: `Verbatim extract　${sec.chapter || ''}　${sec.range || ''}`.trim(),
+          meta: [
+            zh ? ['出处', zh] : null,
+            sec.book ? ['编', sec.book] : null,
+            sec.chapter ? ['章', sec.chapter] : null,
+            sec.range ? ['条文', sec.range] : null,
+            ['性质', '原文引用（未改写）'],
+          ].filter(Boolean),
+          paragraphs: sec.paragraphs,
+          verbatim: true,
+        });
+        if (!first) first = doc;
+      }
+
+      toast(`${ids.length} section${ids.length === 1 ? '' : 's'} added`);
+      paintManage();
+      if (first) navigate({ view: 'reader', docId: first.id });
+    }
+
+    paintList();
+  }
+
   // ── 3. generate a hypothetical ───────────────────────────────────────────
-  function paintGenerator(chosenTerms) {
+  function paintGenerator(genSec, chosenTerms) {
     clear(genSec);
     const s = analysis.stats;
     const ctxId = s.docType || 'judgments';
@@ -665,6 +969,18 @@ function stat(n, label) {
 
 function field(label, input) {
   return el('label', { class: 'gen-field' }, [el('span', { text: label }), input]);
+}
+
+const genField = field;
+
+/** '第四百六十三条-第四百六十八条' -> '463-468', for the English title. */
+function arabicRange(range) {
+  if (!range) return '';
+  const nums = [...range.matchAll(/第([\u3007\u96f6\u4e00-\u9fff\d]+?)\u6761/g)]
+    .map((m) => cnToArabic(m[1]))
+    .filter((n) => n > 0);
+  if (!nums.length) return '';
+  return nums.length > 1 ? `${nums[0]}\u2013${nums[nums.length - 1]}` : String(nums[0]);
 }
 
 function selectEl(values, current, labels) {

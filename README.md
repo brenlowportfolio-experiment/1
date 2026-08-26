@@ -32,18 +32,20 @@ Export** for a backup.
 ## How it works
 
 **Contexts** are registers of legal Chinese, each with its own conventions.
-Three ship today, and the design assumes more:
+Four ship today, and the design assumes more:
 
 | Context | 中文 | What it drills |
 |---|---|---|
 | Emails | 往来邮件 | Polite register, hedged disagreement, the fixed openings and closings of Chinese business letters |
 | Contracts | 合同条款 | Operative language — 应当 / 不得 / 除非 / 但…除外, definitions, carve-outs |
 | Judgments | 裁判文书 | The fixed architecture of a civil judgment and the connectives that carry its reasoning (遂、故、据此、综上) |
+| Statutes | 法律法规 | Enacted text, quoted as written: 的-clauses as protases, 应当/不得/可以 as operators, 但是…除外 as the carve-out |
 
-Every document is **hypothetical**. Parties, firms, courts, case numbers and
-facts are invented; the documents imitate the language and structure of real
-PRC practice without reproducing any actual email, contract or judgment. See
-[`docs/AUTHORING.md`](docs/AUTHORING.md) for the rules new documents follow.
+Emails, contracts and judgments are **hypothetical** — parties, firms, courts,
+case numbers and facts invented, imitating the language and structure of real
+PRC practice without reproducing any actual document. **Statutes are the
+deliberate exception**, for the reasons set out under *Importing* below. See
+[`docs/AUTHORING.md`](docs/AUTHORING.md) for the rules each kind follows.
 
 **Reading.** Hover any word for its pinyin, meaning and register tag. The
 documents themselves are unannotated — clean Chinese, as you'd meet it — so
@@ -70,6 +72,39 @@ Keyboard: `space` reveals then grades *Good*; `1`–`4` grade directly; `c`
 toggles context.
 
 ## Importing a real document
+
+Upload a PDF or `.txt`, or paste text. The app works out what the document is,
+then offers one of two routes depending on the answer.
+
+PDFs are read in the browser (pdf.js, vendored, loaded only when you actually
+open one). Extracted text is repaired before anything else touches it, because
+PDF extraction routinely returns characters that *look* right and aren't:
+当事人 comes back as 当事⼈, built from Kangxi radicals rather than the ordinary
+codepoints. The Civil Code PDF this was built against contained 5,168 of them.
+Nothing downstream can match those — the dictionary misses, segmentation
+shatters — so they are mapped back first. Scanned PDFs hold images rather than
+text and would need OCR; the app says so rather than failing silently.
+
+### Verbatim — statutes and text you hold the rights to
+
+A statute is the case where paraphrasing defeats the purpose: you cannot
+rewrite 第五百七十七条 and still be learning 第五百七十七条, because the exact
+wording is what gets argued over. Enacted text also carries no copyright under
+Article 5 of the PRC Copyright Law, and nothing in it is confidential. So it is
+quoted as written.
+
+Upload 民法典 Book III and the app reports: *statute, 526 articles across 34
+chapters, cut into 107 readable sections*. It cuts at the document's own seams
+— never mid-article — into pieces of roughly 400 characters, labels each with
+its chapter and article range (`第一章 一般规定　第四百六十三条—第四百六十八条`,
+`PRC Civil Code — Arts. 463–468`), and files them under **Statutes**. Pick the
+sections you want; each becomes a study document like any other.
+
+Saving requires ticking a confirmation that the text is public law or yours to
+reproduce. That gate exists because verbatim copying is exactly what the other
+route is built to prevent.
+
+### Hypothetical — client and counterparty documents
 
 **Import** takes a real judgment, contract or email and mines it for
 vocabulary. Paste the text (or drop a `.txt`), and the app reports what it
@@ -124,6 +159,9 @@ src/
     lexicon.js        built-in dictionary + user additions, merged
     userdict.js       vocabulary you've taught it
     discover.js       novel-term discovery, verbatim-overlap guard
+    normalize.js      repairs Kangxi radicals and other PDF-extraction damage
+    sectionize.js     cuts a long statute into study-sized sections; classifier
+    pdftext.js        PDF text extraction (loads pdf.js on demand)
     srs.js            SM-2 scheduling (pure functions)
     store.js          localStorage persistence, import/export
     dom.js            element helpers, pinyin-above-characters rendering
@@ -134,8 +172,9 @@ src/
     deck.js           browse/edit cards, settings, data
     import.js         mine a real document, generate a hypothetical
   data/
-    dictionary.js     ~1,150 entries — glosses AND word boundaries
+    dictionary.js     ~1,170 entries — glosses AND word boundaries
     contexts/         one file per context + registry
+vendor/               pdf.js, checked in (see vendor/README.md)
 docs/AUTHORING.md     adding contexts, documents and vocabulary
 ```
 

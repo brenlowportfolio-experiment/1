@@ -72,7 +72,7 @@ export function render(root, { navigate }) {
     el('p', {
       class: 'corpus-note',
       text:
-        'Every document here is hypothetical — written to mirror the language of real PRC practice without reproducing any actual email, contract or judgment.',
+        'Emails, contracts and judgments here are hypothetical — written to mirror the language of real PRC practice without reproducing any actual document. Statutes are the exception: enacted text carries no copyright and its exact wording is the thing being learned, so it is quoted as written.',
     }),
   );
 }

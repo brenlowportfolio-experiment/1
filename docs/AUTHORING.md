@@ -125,6 +125,21 @@ A prompt that produces usable output:
 
 Then run the coverage snippet above and add whatever vocabulary is missing.
 
+## Verbatim contexts
+
+`statutes` is the one context whose documents are *not* hypothetical, and the
+exception is deliberate on two grounds. Enacted text carries no copyright under
+Article 5 of the PRC Copyright Law and contains nothing confidential; and
+paraphrasing it would destroy the thing being taught, since the exact wording of
+第五百七十七条 is what gets argued over.
+
+Mark such documents `verbatim: true`. The reader uses it to swap the
+"hypothetical document" disclaimer for an accurate one — an important detail,
+because a statute mislabelled as invented is worse than no label at all.
+
+Do **not** set `verbatim: true` on a document merely to skip the plagiarism
+guard. The guard is what keeps a client's contract out of the shipped corpus.
+
 ## Generating from a real document
 
 The Import page automates the loop above: it mines a real judgment, contract or

@@ -1246,6 +1246,18 @@ export const CHARS = {
   '理': ['lǐ', 'to manage; reason', 'gen'],
   '宗': ['zōng', 'ancestor; (measure: transactions)', 'biz'],
   '笔': ['bǐ', 'pen; (measure: sums, transactions)', 'biz'],
+  '编': ['biān', 'book, part (of a code); to compile', 'law'],
+  '参': ['cān', 'to refer to, to consult', 'law'],
+  '含': ['hán', 'to contain, to imply', 'gen'],
+  '词': ['cí', 'word, term', 'gen'],
+  '句': ['jù', 'sentence, phrase', 'gen'],
+  '营': ['yíng', 'to operate, to run', 'biz'],
+  '仅': ['jǐn', 'only, merely', 'func'],
+  '推': ['tuī', 'to push; to presume', 'law'],
+  '致': ['zhì', 'to cause; to send', 'func'],
+  '似': ['sì', 'to resemble', 'func'],
+  '探': ['tàn', 'to explore, to prospect', 'gen'],
+  '源': ['yuán', 'source, origin', 'gen'],
 };
 
 /** Merged lookup table: TERMS take precedence over CHARS. */

@@ -11,9 +11,10 @@
 import emails from './emails.js';
 import contracts from './contracts.js';
 import judgments from './judgments.js';
+import statutes from './statutes.js';
 import * as store from '../../lib/store.js';
 
-export const CONTEXTS = [emails, contracts, judgments];
+export const CONTEXTS = [emails, contracts, judgments, statutes];
 
 function decorate(doc, ctx) {
   return { ...doc, contextId: ctx.id, contextName: ctx.name };
