@@ -2,7 +2,8 @@
 // drag across a run of words to mint a flashcard from it.
 
 import { el, clear, ruby, append } from '../lib/dom.js';
-import { segment, describeSpan, sentenceAround } from '../lib/segment.js';
+import { segment, sentenceAround } from '../lib/segment.js';
+import { glossPhrase, loadGlossary, glossaryReady, SOURCE_LABEL } from '../lib/translate.js';
 import { getDoc } from '../data/contexts/index.js';
 import * as store from '../lib/store.js';
 
@@ -137,15 +138,43 @@ export function render(root, { docId, focus } = {}) {
     const lo = Math.min(anchor.i, focusTok.i);
     const hi = Math.max(anchor.i, focusTok.i);
     const toks = paraTokens[anchor.p];
-    const start = toks[lo].start;
-    const end = toks[hi].end;
-    return { p: anchor.p, start, end, text: doc.paragraphs[anchor.p].slice(start, end) };
+    const para = doc.paragraphs[anchor.p];
+    let start = toks[lo].start;
+    let end = toks[hi].end;
+
+    // A drag spanning two words also spans the punctuation between them, and
+    // at the edges that punctuation is not part of the phrase — it would end
+    // up on the flashcard as 本院认为：原、被告签订的.
+    const isHan = (c) => /[一-鿿]/.test(c);
+    while (start < end && !isHan(para[start])) start++;
+    while (end > start && !isHan(para[end - 1])) end--;
+    if (start >= end) return null;
+
+    return { p: anchor.p, start, end, text: para.slice(start, end) };
   }
 
   function openPopup() {
     const sel = currentSpan();
     if (!sel) return hidePopup();
-    const info = describeSpan(sel.text);
+    let info = glossPhrase(sel.text);
+    let edited = false;
+
+    // A dragged phrase leans much harder on the fallback glossary than a
+    // single hover does, so it is fetched on the first selection rather than
+    // on page load. The popup opens straight away with whatever is already
+    // known and refines itself when the glossary arrives.
+    if (!glossaryReady()) {
+      loadGlossary()
+        .then(() => {
+          const field = popup.querySelector('.sp-meaning');
+          if (popup.hidden || !field || edited) return;
+          info = glossPhrase(sel.text);
+          field.value = info.meaning;
+          const note = popup.querySelector('.sp-note');
+          if (note) note.textContent = describeSource(info);
+        })
+        .catch(() => {});
+    }
     const sentence = sentenceAround(doc.paragraphs[sel.p], sel.start, sel.end);
     const existing = store.findCardByTerm(sel.text);
 
@@ -159,6 +188,9 @@ export function render(root, { docId, focus } = {}) {
         value: existing?.meaning || info.meaning || '',
         placeholder: 'Meaning (edit freely)',
         spellcheck: 'false',
+        oninput: () => {
+          edited = true;
+        },
       }),
       el('div', { class: 'sp-sentence', text: sentence.text }),
       el('div', { class: 'sp-actions' }, [
@@ -200,11 +232,7 @@ export function render(root, { docId, focus } = {}) {
           },
         }),
       ]),
-      !info.exact &&
-        el('p', {
-          class: 'sp-note',
-          text: 'Not a single dictionary headword — pinyin assembled from the parts. Edit the meaning to suit.',
-        }),
+      el('p', { class: 'sp-note', text: describeSource(info) }),
     );
 
     const nodes = body.querySelectorAll('.tok.sel');
@@ -305,6 +333,22 @@ export function render(root, { docId, focus } = {}) {
     hideTooltip();
     hidePopup();
   };
+}
+
+/**
+ * Say how the gloss was arrived at. For a multi-word selection the unit split
+ * is the useful part: it shows where the app thought the boundaries were, so a
+ * wrong reading is obvious at a glance rather than after a week of reviews.
+ */
+function describeSource(info) {
+  const label = SOURCE_LABEL[info.source] || '';
+  // Show only the words. Listing the punctuation a drag happened to cross
+  // ("的 · 对方 · （ · " · 披露方") obscures the split rather than explaining it.
+  const words = (info.units || []).filter((u) => /[一-鿿]/.test(u));
+  if (words.length > 1) {
+    return `Read as a phrase: ${words.join(' · ')} — edit the meaning to suit.`;
+  }
+  return `${label.charAt(0).toUpperCase()}${label.slice(1)} — edit the meaning to suit.`;
 }
 
 let toastTimer;

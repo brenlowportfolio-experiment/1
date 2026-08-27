@@ -612,6 +612,15 @@ export const TERMS = {
   '货物': ['huò wù', 'goods, cargo', 'biz'],
   '索赔': ['suǒ péi', 'to claim compensation', 'law'],
   '生产线': ['shēng chǎn xiàn', 'production line', 'biz'],
+  '甲方': ['jiǎ fāng', 'Party A', 'law'],
+  '乙方': ['yǐ fāng', 'Party B', 'law'],
+  '丙方': ['bǐng fāng', 'Party C', 'law'],
+  '依据': ['yī jù', 'pursuant to; basis', 'law'],
+  '民事': ['mín shì', 'civil (as opposed to criminal)', 'law'],
+  '产生': ['chǎn shēng', 'to arise, to give rise to', 'law'],
+  '成立': ['chéng lì', 'to be formed, to be established', 'law'],
+  '全部': ['quán bù', 'the whole, all of', 'gen'],
+  '关系': ['guān xì', 'relationship, relations', 'gen'],
 };
 
 // Single-character fallback so hover still gives something useful.

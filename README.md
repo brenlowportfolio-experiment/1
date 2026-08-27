@@ -57,6 +57,29 @@ already in your deck get a green underline in the text, so a re-read shows you
 what you've mined. Adding a word you already have attaches the new sentence to
 the existing card as a second context rather than duplicating it.
 
+A dragged selection is glossed **as a phrase**, not word by word:
+
+| | |
+|---|---|
+| 不得向任何第三方披露 | may not disclose to any third party |
+| 任何一方未能履行本协议项下的 | where either party fails to perform this Agreement under |
+| 关于第八条陈述与保证 | regarding Article 8 representations and warranties |
+| 除因不可抗力外 | other than by reason of force majeure |
+
+Three things get it there. The span is split into the *fewest, longest* known
+units by shortest path rather than greedily left to right, so whole terms stay
+intact. Statutory references and numbers are pulled out whole — 第一百四十二条
+is "Article 142", not "first hundred four twelve article". And a small set of
+templates handles the function words that carry legal Chinese: 的 closing a
+clause becomes "where …", 除…外 wraps rather than precedes, modals take a bare
+infinitive, and 向 moves its object after the verb the way English wants.
+
+It is still a gloss, not a translation, and long multi-clause selections
+degrade — two to five words is where it earns its keep. The popup shows how it
+split the phrase (`任何一方 · 未能 · 履行 · 本协议 · 项下`) so a wrong reading is
+obvious immediately rather than after a week of reviews, and the field is
+editable as always.
+
 **Reviewing.** Due cards come up in random order, so you're testing recall
 rather than sequence. The front shows the characters with **pinyin above
 them**; reveal gives the meaning, and 语境 opens the sentence it came from with
