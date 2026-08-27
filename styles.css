@@ -42,6 +42,11 @@
 
 * { box-sizing: border-box; }
 
+/* The UA rule for [hidden] is display:none, but any class rule that sets
+   display outranks it — .grades{display:grid} was showing the answer buttons
+   before the card had been revealed. Make hidden mean hidden. */
+[hidden] { display: none !important; }
+
 body {
   margin: 0;
   background: var(--paper);
@@ -506,3 +511,23 @@ h2 { font-size: 19px; margin: 0; }
 .cand-meaning.src-composed, .cand-meaning.src-partial { font-style: italic; }
 .cand-meaning.src-edited { border-color: var(--ink-3); font-style: normal; }
 .gloss-status { margin: 6px 0 0; }
+
+/* ── pinyin toggle in review ────────────────────────────────────────── */
+.pin-toggle {
+  display: inline-flex; align-items: baseline; gap: 6px;
+  font: inherit; font-size: 12px; padding: 4px 11px; border-radius: 999px;
+  border: 1px solid var(--line-2); background: var(--card); color: var(--ink-2);
+  cursor: pointer; white-space: nowrap; transition: border-color .15s ease, color .15s ease;
+}
+.pin-toggle:hover { border-color: var(--ink-3); color: var(--ink); }
+.pt-label { font-family: var(--zh); font-size: 13px; }
+.pt-state { font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; }
+.pin-toggle.on { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 40%, var(--line)); }
+.pin-toggle.off { color: var(--ink-3); }
+.pin-toggle.off .pt-label { opacity: .55; }
+
+/* Hiding is presentational only — the ruby stays in the DOM so toggling
+   mid-card never re-renders and never resets the reveal. */
+.card.hide-pinyin .card-face .ruby-pinyin { display: none; }
+.card:not(.hide-pinyin) .answer-pinyin { display: none; }
+.card.hide-pinyin .card-face .ruby-base { font-size: 1.05em; }

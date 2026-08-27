@@ -62,6 +62,12 @@ rather than sequence. The front shows the characters with **pinyin above
 them**; reveal gives the meaning, and 语境 opens the sentence it came from with
 the term highlighted — 打开全文 jumps to that exact spot in the document.
 
+The **拼音** button above the card turns the pinyin off, so the characters
+stand alone and you're testing whether you can read them rather than whether
+you recognise a romanisation. With it off, the pinyin moves to the answer side
+and appears on reveal, so you can still check the reading. The choice sticks
+across cards and sessions, and matches the setting in Deck → Settings.
+
 Scheduling is an SM-2 variant at day granularity: a new card you grade *Good*
 returns tomorrow, then in three days, then at intervals multiplied by the
 card's ease factor. *Again* resets the interval **and** requeues the card later
@@ -69,7 +75,7 @@ in the same session, so a word you blanked on gets tested twice before you
 leave.
 
 Keyboard: `space` reveals then grades *Good*; `1`–`4` grade directly; `c`
-toggles context.
+toggles context; `p` toggles pinyin.
 
 ## Importing a real document
 

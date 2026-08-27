@@ -78,6 +78,12 @@ export function render(root, { navigate }) {
     const settings = store.getSettings();
     clear(stage);
 
+    const pinToggle = el('button', {
+      class: 'pin-toggle',
+      onclick: togglePinyin,
+      title: 'Show or hide the pinyin above the characters (p)',
+    });
+
     const progress = el('div', { class: 'review-progress' }, [
       el('div', {
         class: 'bar',
@@ -87,23 +93,20 @@ export function render(root, { navigate }) {
         class: 'counter',
         text: `${done} done · ${queue.length} left`,
       }),
+      pinToggle,
     ]);
 
+    // The pinyin is always rendered and hidden with CSS rather than being
+    // conditionally built. Toggling mid-card therefore costs no re-render, so
+    // it can't reset the reveal state or lose your place in the queue.
     const front = el('div', { class: 'card-face' }, [
-      settings.showPinyinOnFront
-        ? ruby(card.term, card.pinyin, { size: 'xl' })
-        : el('span', { class: 'ruby xl' }, [
-            el('span', { class: 'ruby-unit' }, [
-              el('span', { class: 'ruby-pinyin', text: '' }),
-              el('span', { class: 'ruby-base', text: card.term }),
-            ]),
-          ]),
+      ruby(card.term, card.pinyin, { size: 'xl' }),
     ]);
 
     const back = el('div', { class: 'card-back', hidden: 'hidden' });
     append(
       back,
-      !settings.showPinyinOnFront && el('div', { class: 'answer-pinyin', text: card.pinyin }),
+      el('div', { class: 'answer-pinyin', text: card.pinyin }),
       el('div', { class: 'answer-meaning', text: card.meaning || '—' }),
       card.note && el('div', { class: 'answer-note', text: card.note }),
     );
@@ -161,6 +164,26 @@ export function render(root, { navigate }) {
       );
     });
 
+    function paintToggle() {
+      const on = store.getSettings().showPinyinOnFront;
+      pinToggle.className = `pin-toggle ${on ? 'on' : 'off'}`;
+      pinToggle.setAttribute('aria-pressed', String(on));
+      clear(pinToggle);
+      pinToggle.append(
+        el('span', { class: 'pt-label', text: '拼音' }),
+        el('span', { class: 'pt-state', text: on ? 'shown' : 'hidden' }),
+      );
+    }
+
+    function togglePinyin() {
+      const next = !store.getSettings().showPinyinOnFront;
+      store.updateSettings({ showPinyinOnFront: next });
+      cardEl.classList.toggle('hide-pinyin', !next);
+      paintToggle();
+    }
+
+    paintToggle();
+
     function reveal() {
       if (revealed) return;
       revealed = true;
@@ -169,9 +192,9 @@ export function render(root, { navigate }) {
       grades.hidden = false;
     }
 
-    stage.append(
-      progress,
-      el('div', { class: 'card' }, [
+    const cardEl = el('div', {
+      class: `card${settings.showPinyinOnFront ? '' : ' hide-pinyin'}`,
+    }, [
         el('div', { class: 'card-meta' }, [
           el('span', { class: `pill ${card.srs.state}`, text: stateLabel(card.srs) }),
           el('span', { class: 'pill quiet', text: card.sources[0]?.docTitle || '' }),
@@ -181,8 +204,9 @@ export function render(root, { navigate }) {
         el('div', { class: 'card-actions' }, [revealBtn, grades]),
         el('div', { class: 'card-ctx-row' }, [ctxBtn]),
         ctxWrap,
-      ]),
-    );
+    ]);
+
+    stage.append(progress, cardEl);
 
     keyHandler = (ev) => {
       if (ev.key === ' ' || ev.key === 'Enter') {
@@ -193,6 +217,8 @@ export function render(root, { navigate }) {
         grade(card, Number(ev.key) - 1);
       } else if (ev.key.toLowerCase() === 'c') {
         ctxWrap.hidden = !ctxWrap.hidden;
+      } else if (ev.key.toLowerCase() === 'p') {
+        togglePinyin();
       }
     };
   }
