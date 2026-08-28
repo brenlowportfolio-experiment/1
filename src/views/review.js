@@ -98,7 +98,7 @@ export function render(root, { navigate }) {
   }
 
   function grade(card, g) {
-    const nextSrs = schedule(card.srs, g);
+    const nextSrs = schedule(card.srs, g, new Date(), store.getSettings().maxInterval);
     store.recordReview(card.id, nextSrs);
     done++;
     const [head, ...rest] = queue;
@@ -182,7 +182,7 @@ export function render(root, { navigate }) {
     });
 
     const grades = el('div', { class: 'grades', hidden: 'hidden' });
-    const previews = previewIntervals(card.srs);
+    const previews = previewIntervals(card.srs, new Date(), settings.maxInterval);
     [
       ['Again', GRADE.AGAIN, 'again'],
       ['Hard', GRADE.HARD, 'hard'],

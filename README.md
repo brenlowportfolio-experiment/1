@@ -97,11 +97,32 @@ whether or not a card is up, so it can be set before a session starts. With it o
 and appears on reveal, so you can still check the reading. The choice sticks
 across cards and sessions, and matches the setting in Deck → Settings.
 
-Scheduling is an SM-2 variant at day granularity: a new card you grade *Good*
-returns tomorrow, then in three days, then at intervals multiplied by the
-card's ease factor. *Again* resets the interval **and** requeues the card later
-in the same session, so a word you blanked on gets tested twice before you
-leave.
+Scheduling is an SM-2 variant at day granularity, with a **ceiling** on how far
+ahead anything can be pushed — set in Deck → Settings, and **3 days** by
+default:
+
+| | |
+|---|---|
+| Again | later in this session, and again today |
+| Hard | 1 day |
+| Good | 2 days |
+| Easy | 3 days |
+
+Left alone, SM-2 runs 3 → 8 → 20 → 50 → 125 days. That is right for long-term
+retention and too slow for vocabulary you expect to use this month. The ceiling
+keeps everything within reach; the cost is that nothing ever leaves rotation,
+so the daily load grows with the deck — around 100 reviews a day at 300 cards.
+Raise the ceiling as the deck grows and cards stick.
+
+Below about five days there is no room for a ladder, so the grades map straight
+onto the range rather than compounding — otherwise Hard, Good and Easy would
+all land on the same day and the buttons would stop meaning anything. Above
+that, normal SM-2 growth resumes and the ceiling just clamps the result.
+
+Lowering the ceiling also pulls back cards already scheduled beyond it, so the
+change takes effect on the deck you have rather than only on cards graded from
+now on. *Again* resets the interval **and** requeues the card later in the same
+session, so a word you blanked on gets tested twice before you leave.
 
 Keyboard: `space` reveals then grades *Good*; `1`–`4` grade directly; `c`
 toggles context; `p` toggles pinyin.

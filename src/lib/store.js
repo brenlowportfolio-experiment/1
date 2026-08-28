@@ -2,7 +2,7 @@
 // deck can be exported/imported as a single JSON file — there is no server and
 // no account, which also means nothing a user reads or drafts leaves the device.
 
-import { newSchedule, dayKey } from './srs.js';
+import { newSchedule, dayKey, addDays, DEFAULT_MAX } from './srs.js';
 
 const KEY = 'falv-zhongwen.v1';
 
@@ -12,6 +12,7 @@ const DEFAULTS = {
   userDocs: [], // hypotheticals generated from an uploaded source
   settings: {
     newPerDay: 12,
+    maxInterval: DEFAULT_MAX, // days — the furthest ahead a card can be pushed
     showPinyinOnFront: true, // pinyin sits above the characters, as ruby text
     reviewLimit: 60,
   },
@@ -20,6 +21,11 @@ const DEFAULTS = {
 
 let state = load();
 const listeners = new Set();
+
+// Cards graded before the ceiling existed can sit weeks out. Bring them inside
+// it on load, so lowering the ceiling takes effect for a deck built under the
+// old rules rather than only for cards graded from now on.
+if (clampSchedules(state.settings.maxInterval) > 0) persist();
 
 function load() {
   try {
@@ -63,8 +69,30 @@ export function getSettings() {
 }
 
 export function updateSettings(patch) {
+  const before = state.settings.maxInterval;
   state.settings = { ...state.settings, ...patch };
+  // Lowering the ceiling has to reach cards already scheduled beyond it,
+  // otherwise everything graded Easy last week stays a fortnight out and the
+  // change looks broken.
+  if (patch.maxInterval != null && patch.maxInterval < before) {
+    clampSchedules(patch.maxInterval);
+  }
   persist();
+}
+
+/** Pull any card scheduled further out than `max` back inside the ceiling. */
+export function clampSchedules(max) {
+  const limit = Math.max(1, Math.round(max));
+  const latest = dayKey(addDays(new Date(), limit));
+  let moved = 0;
+  for (const c of state.cards) {
+    if (c.srs.interval > limit) c.srs.interval = limit;
+    if (c.srs.due > latest) {
+      c.srs.due = latest;
+      moved++;
+    }
+  }
+  return moved;
 }
 
 export function findCardByTerm(term) {
@@ -159,6 +187,7 @@ export function importJSON(text) {
     ...parsed,
     settings: { ...DEFAULTS.settings, ...(parsed.settings || {}) },
   };
+  clampSchedules(state.settings.maxInterval);
   persist();
 }
 

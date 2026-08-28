@@ -191,6 +191,18 @@ function settingsPanel(onChange) {
         type: 'number', min: '0', max: '100', value: String(s.newPerDay),
         onchange: (e) => store.updateSettings({ newPerDay: Math.max(0, +e.target.value || 0) }),
       })),
+    field('Longest interval (days)',
+      el('input', {
+        type: 'number', min: '1', max: '365', value: String(s.maxInterval),
+        title: 'The furthest ahead any card can be scheduled. Lowering this also pulls back cards already scheduled beyond it.',
+        onchange: (e) => {
+          const v = Math.min(365, Math.max(1, +e.target.value || 1));
+          e.target.value = String(v);
+          store.updateSettings({ maxInterval: v });
+          toast(`Ceiling set to ${v} day${v === 1 ? '' : 's'}`);
+          onChange();
+        },
+      })),
     field('Max cards per session',
       el('input', {
         type: 'number', min: '5', max: '300', value: String(s.reviewLimit),
@@ -245,7 +257,14 @@ function settingsPanel(onChange) {
     }),
   ]);
 
-  body.append(dataRow, el('p', { class: 'hint', text: 'Your deck is stored only in this browser. Export it if you want a backup.' }));
+  body.append(
+    dataRow,
+    el('p', {
+      class: 'hint',
+      text: 'A low interval ceiling keeps everything in rotation, at the cost of a daily load that grows with the deck — raise it as the deck gets bigger and cards stick.',
+    }),
+    el('p', { class: 'hint', text: 'Your deck is stored only in this browser. Export it if you want a backup.' }),
+  );
   wrap.append(body);
   return wrap;
 }
