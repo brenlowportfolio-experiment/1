@@ -29,6 +29,11 @@ Everything is stored in your browser's `localStorage`. Nothing leaves the
 machine; there's no account and no server. Use **Deck → Settings & data →
 Export** for a backup.
 
+Works on a phone — every view is checked at 390px, and the reader's tap-to-gloss
+and tap-to-select behave the same as click and drag. The deck is per-browser
+though, so a phone and a laptop keep separate decks unless you move one across
+with export/import.
+
 ## How it works
 
 **Contexts** are registers of legal Chinese, each with its own conventions.

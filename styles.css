@@ -531,3 +531,32 @@ h2 { font-size: 19px; margin: 0; }
 .card.hide-pinyin .card-face .ruby-pinyin { display: none; }
 .card:not(.hide-pinyin) .answer-pinyin { display: none; }
 .card.hide-pinyin .card-face .ruby-base { font-size: 1.05em; }
+
+/* ── narrow screens ─────────────────────────────────────────────────── */
+/* The wordmark must never be squeezed into a vertical column, and four nav
+   items no longer fit beside it on a phone — Import was falling off-screen. */
+.brand { flex: none; white-space: nowrap; }
+.topbar { flex-wrap: wrap; row-gap: 8px; }
+.nav { flex-wrap: wrap; }
+
+/* A long source title (《中华人民共和国民法典》第三编 合同 第一章 一般规定)
+   otherwise wraps to three lines and dwarfs the card it labels. */
+.pill.quiet {
+  max-width: min(100%, 44ch);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.card-meta { flex-wrap: nowrap; min-width: 0; }
+.card-meta .pill:first-child { flex: none; }
+
+@media (max-width: 700px) {
+  .topbar { padding: 10px 14px; gap: 10px; }
+  .brand-en { display: none; }
+  .brand-zh { font-size: 18px; }
+  .nav-item { padding: 6px 10px; font-size: 13px; }
+  .badge { margin-left: 5px; padding: 1px 6px; font-size: 10px; }
+  .review-progress { flex-wrap: wrap; row-gap: 8px; }
+  .bar { order: 3; flex-basis: 100%; }
+  .pill.quiet { max-width: min(100%, 26ch); }
+  .doc-title-zh { font-size: 21px; }
+  .ruby.xl { font-size: 38px; }
+}

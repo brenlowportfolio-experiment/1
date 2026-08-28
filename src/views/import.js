@@ -68,7 +68,7 @@ export function render(root, { navigate }) {
     class: 'source-input',
     rows: '10',
     placeholder:
-      '把判决书、合同或邮件正文粘贴到这里…\n\nPaste the Chinese text of a judgment, contract or email here (or drop a .txt file).',
+      '把法律、判决书、合同或邮件正文粘贴到这里…\n\nPaste the Chinese text of a statute, judgment, contract or email — or drop a PDF or .txt file anywhere on this box.',
     spellcheck: 'false',
   });
 
