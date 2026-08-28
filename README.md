@@ -90,9 +90,10 @@ rather than sequence. The front shows the characters with **pinyin above
 them**; reveal gives the meaning, and 语境 opens the sentence it came from with
 the term highlighted — 打开全文 jumps to that exact spot in the document.
 
-The **拼音** button above the card turns the pinyin off, so the characters
-stand alone and you're testing whether you can read them rather than whether
-you recognise a romanisation. With it off, the pinyin moves to the answer side
+The **拼音 Pinyin on / off** button, top right above the card, turns the pinyin
+off so the characters stand alone and you're testing whether you can read them
+rather than whether you recognise a romanisation. It sits in the same place
+whether or not a card is up, so it can be set before a session starts. With it off, the pinyin moves to the answer side
 and appears on reveal, so you can still check the reading. The choice sticks
 across cards and sessions, and matches the setting in Deck → Settings.
 

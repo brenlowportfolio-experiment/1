@@ -24,8 +24,47 @@ export function render(root, { navigate }) {
   const stage = el('div', { class: 'review' });
   root.append(stage);
 
+  // The toggle lives at render scope, not inside draw(), because it used to
+  // exist only while a card was on screen — open Review with nothing due and
+  // there was no way to find it at all.
+  let cardEl = null;
+
+  const pinToggle = el('button', {
+    class: 'pin-toggle',
+    title: 'Show or hide the pinyin above the characters (p)',
+    onclick: togglePinyin,
+  });
+
+  function paintToggle() {
+    const on = store.getSettings().showPinyinOnFront;
+    pinToggle.className = `pin-toggle ${on ? 'on' : 'off'}`;
+    pinToggle.setAttribute('aria-pressed', String(on));
+    clear(pinToggle);
+    pinToggle.append(
+      el('span', { class: 'pt-dot' }),
+      el('span', { class: 'pt-label', text: '拼音' }),
+      el('span', { class: 'pt-state', text: on ? 'Pinyin on' : 'Pinyin off' }),
+    );
+  }
+
+  function togglePinyin() {
+    const next = !store.getSettings().showPinyinOnFront;
+    store.updateSettings({ showPinyinOnFront: next });
+    if (cardEl) cardEl.classList.toggle('hide-pinyin', !next);
+    paintToggle();
+  }
+
+  paintToggle();
+
   function finish() {
+    cardEl = null;
     clear(stage);
+    stage.append(
+      el('div', { class: 'review-progress done' }, [
+        el('span', { class: 'counter', text: done ? `${done} reviewed` : 'Nothing due' }),
+        pinToggle,
+      ]),
+    );
     stage.append(
       el('div', { class: 'review-done' }, [
         el('div', { class: 'done-mark', text: '完' }),
@@ -77,12 +116,6 @@ export function render(root, { navigate }) {
   function draw(card) {
     const settings = store.getSettings();
     clear(stage);
-
-    const pinToggle = el('button', {
-      class: 'pin-toggle',
-      onclick: togglePinyin,
-      title: 'Show or hide the pinyin above the characters (p)',
-    });
 
     const progress = el('div', { class: 'review-progress' }, [
       el('div', {
@@ -164,26 +197,6 @@ export function render(root, { navigate }) {
       );
     });
 
-    function paintToggle() {
-      const on = store.getSettings().showPinyinOnFront;
-      pinToggle.className = `pin-toggle ${on ? 'on' : 'off'}`;
-      pinToggle.setAttribute('aria-pressed', String(on));
-      clear(pinToggle);
-      pinToggle.append(
-        el('span', { class: 'pt-label', text: '拼音' }),
-        el('span', { class: 'pt-state', text: on ? 'shown' : 'hidden' }),
-      );
-    }
-
-    function togglePinyin() {
-      const next = !store.getSettings().showPinyinOnFront;
-      store.updateSettings({ showPinyinOnFront: next });
-      cardEl.classList.toggle('hide-pinyin', !next);
-      paintToggle();
-    }
-
-    paintToggle();
-
     function reveal() {
       if (revealed) return;
       revealed = true;
@@ -192,7 +205,7 @@ export function render(root, { navigate }) {
       grades.hidden = false;
     }
 
-    const cardEl = el('div', {
+    cardEl = el('div', {
       class: `card${settings.showPinyinOnFront ? '' : ' hide-pinyin'}`,
     }, [
         el('div', { class: 'card-meta' }, [

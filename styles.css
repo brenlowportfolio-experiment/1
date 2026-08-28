@@ -560,3 +560,15 @@ h2 { font-size: 19px; margin: 0; }
   .doc-title-zh { font-size: 21px; }
   .ruby.xl { font-size: 38px; }
 }
+
+/* Make the pinyin toggle findable: it is a control people go looking for,
+   not decoration. Bigger hit area, an explicit English label, and a filled
+   dot so the state reads at a glance. */
+.pin-toggle { font-size: 13px; padding: 6px 13px; gap: 7px; align-items: center; }
+.pt-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: currentColor; opacity: 1; flex: none;
+}
+.pin-toggle.off .pt-dot { background: transparent; box-shadow: inset 0 0 0 1.5px currentColor; }
+.pt-state { font-size: 11.5px; letter-spacing: .04em; text-transform: none; }
+.review-progress.done { justify-content: space-between; margin-bottom: 8px; }
