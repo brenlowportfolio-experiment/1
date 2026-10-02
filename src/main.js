@@ -13,6 +13,7 @@ const outlet = document.getElementById('outlet');
 const nav = document.getElementById('nav');
 let teardown = null;
 let focusPayload = null; // deep-link target that shouldn't live in the URL
+let searchPayload = null;
 
 function parseHash() {
   const h = location.hash.replace(/^#\/?/, '');
@@ -25,6 +26,7 @@ function parseHash() {
 
 function navigate(target) {
   focusPayload = target.focus || null;
+  searchPayload = target.search || null;
   const hash =
     target.view === 'reader' ? `#/read/${target.docId}` : `#/${target.view}`;
   if (location.hash === hash) route();
@@ -41,8 +43,9 @@ function route() {
   outlet.scrollTop = 0;
   window.scrollTo(0, 0);
 
-  const ctx = { navigate, focus: focusPayload };
+  const ctx = { navigate, focus: focusPayload, search: searchPayload };
   focusPayload = null;
+  searchPayload = null;
 
   if (r.view === 'reader') teardown = reader.render(outlet, { docId: r.docId, focus: ctx.focus });
   else if (r.view === 'review') teardown = review.render(outlet, ctx);

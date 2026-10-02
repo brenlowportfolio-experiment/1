@@ -62,6 +62,20 @@ already in your deck get a green underline in the text, so a re-read shows you
 what you've mined. Adding a word you already have attaches the new sentence to
 the existing card as a second context rather than duplicating it.
 
+**Adding a phrase by hand.** Not all vocabulary arrives in a document — some
+comes from a meeting, a colleague's mark-up, or a word looked up on the way
+home. **Deck → Add a phrase** takes one directly: type the Chinese and the
+pinyin and English fill themselves in through the same phrase glossing used in
+the reader, editable as always. If you already have the term, the form says so
+and offers to update it instead of making a duplicate.
+
+Such cards have no source document, so the reader's 语境 button stands down for
+them — unless you supply an example sentence of your own, which then serves as
+the card's context, with the term highlighted in it exactly as a mined card
+would be. Optionally file one under a context so the deck filters reach it;
+otherwise find them under the **By hand** chip. They are ordinary cards in
+every other respect: same deck, same queue, same scheduling.
+
 A dragged selection is glossed **as a phrase**, not word by word:
 
 | | |

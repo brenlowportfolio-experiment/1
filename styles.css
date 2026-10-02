@@ -572,3 +572,41 @@ h2 { font-size: 19px; margin: 0; }
 .pin-toggle.off .pt-dot { background: transparent; box-shadow: inset 0 0 0 1.5px currentColor; }
 .pt-state { font-size: 11.5px; letter-spacing: .04em; text-transform: none; }
 .review-progress.done { justify-content: space-between; margin-bottom: 8px; }
+
+/* ── add a phrase by hand ───────────────────────────────────────────── */
+.addcard { margin-bottom: 22px; }
+.addcard-open { display: inline-flex; align-items: center; gap: 8px; }
+.ac-plus { font-size: 17px; line-height: 1; }
+.addcard-body {
+  margin-top: 12px; padding: 20px 22px;
+  background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+}
+.ac-field { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--ink-3); }
+.ac-field.grow { flex: 1 1 260px; }
+.ac-field input, .ac-field select {
+  font: inherit; font-size: 14px; padding: 8px 11px; border-radius: 7px;
+  border: 1px solid var(--line-2); background: var(--paper); color: var(--ink); width: 100%;
+}
+.ac-field input:focus, .ac-field select:focus { outline: none; border-color: var(--ink-3); }
+.ac-term { font-family: var(--zh); font-size: 17px !important; }
+.ac-sentence { font-family: var(--zh); }
+.ac-row { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 12px; }
+.ac-row .ac-field:first-child { flex: 0 1 220px; }
+.ac-preview { min-height: 34px; margin: 12px 0 0; }
+.ac-preview .ruby { font-size: 24px; }
+.ac-note { margin: 8px 0 0; min-height: 18px; }
+.ac-dupe {
+  margin-top: 10px; padding: 9px 12px; border-radius: 7px; font-size: 13px;
+  display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap;
+  border: 1px solid color-mix(in srgb, var(--warn) 40%, var(--line));
+  background: color-mix(in srgb, var(--warn) 8%, transparent);
+}
+.ac-more { margin-top: 14px; border-top: 1px solid var(--line); padding-top: 12px; }
+.ac-more summary { cursor: pointer; font-size: 13px; color: var(--ink-2); }
+.ac-more-body { display: flex; flex-direction: column; gap: 12px; padding-top: 12px; }
+.row-source-plain { font-size: 12.5px; color: var(--ink-3); font-family: var(--zh); }
+
+@media (max-width: 620px) {
+  .addcard-body { padding: 16px; }
+  .ac-row { flex-direction: column; gap: 10px; }
+}

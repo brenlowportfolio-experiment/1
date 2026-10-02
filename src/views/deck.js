@@ -5,12 +5,13 @@ import * as store from '../lib/store.js';
 import { isDue, daysUntil, dayKey } from '../lib/srs.js';
 import { CONTEXTS, getDoc } from '../data/contexts/index.js';
 import { toast } from './reader.js';
+import { addCardPanel } from './addcard.js';
 
-export function render(root, { navigate }) {
+export function render(root, { navigate, search: initialQuery }) {
   clear(root);
 
   let filter = 'all';
-  let query = '';
+  let query = (initialQuery || '').toLowerCase();
 
   const head = el('header', { class: 'page-head' }, [
     el('h1', { text: 'Deck' }),
@@ -20,13 +21,15 @@ export function render(root, { navigate }) {
   const stats = el('div', { class: 'stats' });
   const controls = el('div', { class: 'controls' });
   const list = el('div', { class: 'card-list' });
+  const adder = addCardPanel({ onAdded: () => paint(), navigate });
 
-  root.append(head, stats, controls, list, settingsPanel(() => paint()));
+  root.append(head, adder, stats, controls, list, settingsPanel(() => paint()));
 
   const search = el('input', {
     class: 'search',
     type: 'search',
     placeholder: 'Search characters, pinyin or meaning…',
+    value: query,
     oninput: (e) => {
       query = e.target.value.trim().toLowerCase();
       paintList();
@@ -34,7 +37,7 @@ export function render(root, { navigate }) {
   });
 
   const filters = el('div', { class: 'chips' });
-  [['all', 'All'], ['due', 'Due'], ['new', 'New'], ...CONTEXTS.map((c) => [c.id, c.name])].forEach(
+  [['all', 'All'], ['due', 'Due'], ['new', 'New'], ['manual', 'By hand'], ...CONTEXTS.map((c) => [c.id, c.name])].forEach(
     ([id, label]) => {
       filters.append(
         el('button', {
@@ -76,6 +79,7 @@ export function render(root, { navigate }) {
 
     if (filter === 'due') cards = cards.filter((c) => isDue(c.srs) && !c.suspended);
     else if (filter === 'new') cards = cards.filter((c) => c.srs.state === 'new');
+    else if (filter === 'manual') cards = cards.filter((c) => c.sources.every((s) => !s.docId));
     else if (filter !== 'all') cards = cards.filter((c) => c.sources.some((s) => s.contextId === filter));
 
     if (query) {
@@ -124,20 +128,31 @@ export function render(root, { navigate }) {
         el(
           'div',
           { class: 'row-sources' },
-          c.sources.map((s) => {
-            const doc = getDoc(s.docId);
-            return el('button', {
-              class: 'linkish tiny',
-              text: doc ? doc.titleZh : s.docTitle,
-              title: s.sentence,
-              onclick: () =>
-                navigate({
-                  view: 'reader',
-                  docId: s.docId,
-                  focus: { paraIndex: s.paraIndex, start: s.start, end: s.end },
-                }),
-            });
-          }),
+          c.sources.length
+            ? c.sources.map((s) => {
+                const doc = getDoc(s.docId);
+                // Added by hand: there is nothing to open, so it reads as a
+                // label rather than pretending to be a link.
+                if (!doc) {
+                  return el('span', {
+                    class: 'row-source-plain',
+                    text: s.docTitle || '手动添加',
+                    title: s.sentence || '',
+                  });
+                }
+                return el('button', {
+                  class: 'linkish tiny',
+                  text: doc.titleZh,
+                  title: s.sentence,
+                  onclick: () =>
+                    navigate({
+                      view: 'reader',
+                      docId: s.docId,
+                      focus: { paraIndex: s.paraIndex, start: s.start, end: s.end },
+                    }),
+                });
+              })
+            : [el('span', { class: 'row-source-plain', text: '手动添加 · Added by hand' })],
         ),
       ]),
       el('div', { class: 'row-side' }, [

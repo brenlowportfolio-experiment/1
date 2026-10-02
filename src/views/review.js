@@ -145,31 +145,38 @@ export function render(root, { navigate }) {
     );
 
     // The context toggle: see the phrase back in the hypothetical it came from.
+    // A card added by hand has no source unless its author wrote an example
+    // sentence, so the button only appears when there is something to show.
+    const quotable = card.sources.filter((s) => s.sentence);
     const ctxWrap = el('div', { class: 'card-context', hidden: 'hidden' });
-    const ctxBtn = el('button', {
-      class: 'btn ghost small',
-      text: `语境 Context (${card.sources.length})`,
-      onclick: () => {
-        ctxWrap.hidden = !ctxWrap.hidden;
-      },
-    });
-    for (const s of card.sources) {
+    const ctxBtn = quotable.length
+      ? el('button', {
+          class: 'btn ghost small',
+          text: `语境 Context (${quotable.length})`,
+          onclick: () => {
+            ctxWrap.hidden = !ctxWrap.hidden;
+          },
+        })
+      : null;
+    for (const s of quotable) {
       const doc = getDoc(s.docId);
       ctxWrap.append(
         el('figure', { class: 'ctx-quote' }, [
           el('blockquote', {}, highlightSentence(s.sentence, card.term)),
           el('figcaption', {}, [
-            `${doc ? doc.titleZh : s.docTitle} · ${doc ? doc.contextName : s.contextId}`,
-            el('button', {
-              class: 'linkish',
-              text: '打开全文 →',
-              onclick: () =>
-                navigate({
-                  view: 'reader',
-                  docId: s.docId,
-                  focus: { paraIndex: s.paraIndex, start: s.start, end: s.end },
-                }),
-            }),
+            `${doc ? doc.titleZh : s.docTitle}${doc ? ` · ${doc.contextName}` : ''}`,
+            doc
+              ? el('button', {
+                  class: 'linkish',
+                  text: '打开全文 →',
+                  onclick: () =>
+                    navigate({
+                      view: 'reader',
+                      docId: s.docId,
+                      focus: { paraIndex: s.paraIndex, start: s.start, end: s.end },
+                    }),
+                })
+              : null,
           ]),
         ]),
       );
@@ -210,12 +217,14 @@ export function render(root, { navigate }) {
     }, [
         el('div', { class: 'card-meta' }, [
           el('span', { class: `pill ${card.srs.state}`, text: stateLabel(card.srs) }),
-          el('span', { class: 'pill quiet', text: card.sources[0]?.docTitle || '' }),
+          card.sources[0]?.docTitle
+            ? el('span', { class: 'pill quiet', text: card.sources[0].docTitle })
+            : el('span', { class: 'pill quiet', text: '手动添加' }),
         ]),
         front,
         back,
         el('div', { class: 'card-actions' }, [revealBtn, grades]),
-        el('div', { class: 'card-ctx-row' }, [ctxBtn]),
+        ctxBtn && el('div', { class: 'card-ctx-row' }, [ctxBtn]),
         ctxWrap,
     ]);
 
@@ -229,7 +238,7 @@ export function render(root, { navigate }) {
       } else if (revealed && ['1', '2', '3', '4'].includes(ev.key)) {
         grade(card, Number(ev.key) - 1);
       } else if (ev.key.toLowerCase() === 'c') {
-        ctxWrap.hidden = !ctxWrap.hidden;
+        if (ctxBtn) ctxWrap.hidden = !ctxWrap.hidden;
       } else if (ev.key.toLowerCase() === 'p') {
         togglePinyin();
       }

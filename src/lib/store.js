@@ -107,7 +107,13 @@ export function addCard(input) {
   const existing = findCardByTerm(input.term);
   if (existing) {
     // Don't duplicate — attach the new sighting as another context instead.
-    if (!existing.sources.some((s) => s.docId === input.source.docId && s.start === input.source.start)) {
+    // A hand-written card may have no source at all, which is not a sighting.
+    if (
+      input.source &&
+      !existing.sources.some(
+        (s) => s.docId === input.source.docId && s.start === input.source.start,
+      )
+    ) {
       existing.sources.push(input.source);
     }
     persist();
@@ -120,7 +126,7 @@ export function addCard(input) {
     pinyin: input.pinyin || '',
     meaning: input.meaning || '',
     note: input.note || '',
-    sources: [input.source],
+    sources: input.source ? [input.source] : [],
     created: new Date().toISOString(),
     suspended: false,
     srs: newSchedule(),
