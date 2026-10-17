@@ -1,19 +1,24 @@
-import { AbsoluteFill, OffthreadVideo, staticFile } from "remotion";
+import { AbsoluteFill, OffthreadVideo, Sequence, staticFile } from "remotion";
 import { BRoll } from "./BRoll";
 import { Captions } from "./Captions";
 import { Overlays, Shade } from "./Overlays";
+import { FPS, KEPT_SEGMENTS, OUTPUT_FRAMES } from "./timeline";
 
-export const REEL_FPS = 30;
-// public/raw.mp4 is 154.19 seconds long.
-export const REEL_DURATION_IN_FRAMES = Math.floor(154.19 * REEL_FPS);
+export const REEL_FPS = FPS;
+export const REEL_DURATION_IN_FRAMES = OUTPUT_FRAMES;
 
 export const Reel: React.FC = () => {
   return (
     <AbsoluteFill style={{ backgroundColor: "black" }}>
-      <OffthreadVideo
-        src={staticFile("raw.mp4")}
-        style={{ width: "100%", height: "100%", objectFit: "cover" }}
-      />
+      {KEPT_SEGMENTS.map((seg) => (
+        <Sequence key={seg.srcStart} from={seg.outStart} durationInFrames={seg.srcEnd - seg.srcStart}>
+          <OffthreadVideo
+            src={staticFile("raw.mp4")}
+            trimBefore={seg.srcStart}
+            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+          />
+        </Sequence>
+      ))}
       <BRoll />
       <Shade />
       <Overlays />

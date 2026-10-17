@@ -6,6 +6,7 @@ import {
   useVideoConfig,
 } from "remotion";
 import { ACCENT, fontFamily, INK, SAFE } from "./theme";
+import { toFrame } from "./timeline";
 
 // Slides in from the top, holds, then slides back out.
 const useEnterExit = (durationInFrames: number) => {
@@ -135,9 +136,9 @@ const Versus: React.FC<{ durationInFrames: number }> = ({ durationInFrames }) =>
   const frame = useCurrentFrame();
   const progress = useEnterExit(durationInFrames);
   const names = [
-    { who: "SPIDER-MAN", actor: "Tobey Maguire", color: "#E63946", at: 321 },
-    { who: "WOLVERINE", actor: "Hugh Jackman", color: "#F4C430", at: 381 },
-    { who: "DEADPOOL", actor: "Ryan Reynolds", color: "#B5172F", at: 456 },
+    { who: "SPIDER-MAN", actor: "Tobey Maguire", color: "#E63946", at: toFrame(82.3) - toFrame(71.6) },
+    { who: "WOLVERINE", actor: "Hugh Jackman", color: "#F4C430", at: toFrame(84.3) - toFrame(71.6) },
+    { who: "DEADPOOL", actor: "Ryan Reynolds", color: "#B5172F", at: toFrame(86.8) - toFrame(71.6) },
   ];
   return (
     <AbsoluteFill style={{ paddingTop: SAFE.top + 10, alignItems: "center" }}>
@@ -210,6 +211,7 @@ const CallToAction: React.FC<{ durationInFrames: number }> = ({ durationInFrames
   );
 };
 
+// Times are in seconds of public/raw.mp4.
 type Cue = { fromS: number; toS: number; render: (d: number) => React.ReactNode };
 
 const CUES: Cue[] = [
@@ -291,12 +293,11 @@ const CUES: Cue[] = [
 ];
 
 export const Overlays: React.FC = () => {
-  const { fps, durationInFrames } = useVideoConfig();
   return (
     <AbsoluteFill>
       {CUES.map((cue) => {
-        const from = Math.round(cue.fromS * fps);
-        const d = Math.min(Math.round(cue.toS * fps), durationInFrames) - from;
+        const from = toFrame(cue.fromS);
+        const d = toFrame(cue.toS) - from;
         return (
           <Sequence key={cue.fromS} from={from} durationInFrames={d} layout="none">
             {cue.render(d)}

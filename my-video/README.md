@@ -58,4 +58,5 @@ Note that for some entities a company license is needed. [Read the terms here](h
 - `public/raw.mp4` is the source clip, `public/captions.json` its word timings.
 - `src/Overlays.tsx` holds the title and card cues (`CUES`), timed in seconds.
 - Regenerate captions: `node scripts/transcribe.mjs small en` (builds whisper.cpp; put `ggml-small.bin` in `whisper.cpp/` first if the download fails).
+- Pauses: `node scripts/find-pauses.mjs [minPause] [keep]` rewrites `src/edit.json`; all cue times stay in raw.mp4 seconds and are mapped by `src/timeline.ts`.
 - Render: `npx remotion render Reel out/reel.mp4`

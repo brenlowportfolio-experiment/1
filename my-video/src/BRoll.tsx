@@ -10,6 +10,7 @@ import {
   useVideoConfig,
 } from "remotion";
 import { ACCENT, fontFamily, INK } from "./theme";
+import { toFrame } from "./timeline";
 
 // Punch-in on entry and a short fade at both ends so cutaways don't hard cut.
 const Cutaway: React.FC<{ durationInFrames: number; children: React.ReactNode }> = ({
@@ -35,13 +36,38 @@ const Cutaway: React.FC<{ durationInFrames: number; children: React.ReactNode }>
   );
 };
 
-const Clip: React.FC<{ src: string; playbackRate?: number }> = ({ src, playbackRate = 1 }) => (
-  <OffthreadVideo
-    src={staticFile(src)}
-    playbackRate={playbackRate}
-    muted
-    style={{ width: "100%", height: "100%", objectFit: "cover" }}
-  />
+// Source credit, placed below the caption band.
+const Credit: React.FC<{ text: string }> = ({ text }) => (
+  <div
+    style={{
+      position: "absolute",
+      left: 110,
+      bottom: 270,
+      fontFamily,
+      fontWeight: 700,
+      fontSize: 22,
+      color: "rgba(255,255,255,0.9)",
+      textShadow: "0 2px 6px rgba(0,0,0,0.9)",
+    }}
+  >
+    {text}
+  </div>
+);
+
+const Clip: React.FC<{ src: string; playbackRate?: number; credit?: string }> = ({
+  src,
+  playbackRate = 1,
+  credit,
+}) => (
+  <AbsoluteFill>
+    <OffthreadVideo
+      src={staticFile(src)}
+      playbackRate={playbackRate}
+      muted
+      style={{ width: "100%", height: "100%", objectFit: "cover" }}
+    />
+    {credit ? <Credit text={credit} /> : null}
+  </AbsoluteFill>
 );
 
 // A still photo framed like the supplied clips: blurred fill behind a slow zoom.
@@ -78,20 +104,7 @@ const Photo: React.FC<{ src: string; credit: string; durationInFrames: number }>
           }}
         />
       </AbsoluteFill>
-      <div
-        style={{
-          position: "absolute",
-          left: 110,
-          bottom: 270,
-          fontFamily,
-          fontWeight: 700,
-          fontSize: 22,
-          color: "rgba(255,255,255,0.9)",
-          textShadow: "0 2px 6px rgba(0,0,0,0.9)",
-        }}
-      >
-        {credit}
-      </div>
+      <Credit text={credit} />
     </AbsoluteFill>
   );
 };
@@ -183,6 +196,7 @@ const VideoWall: React.FC<{ durationInFrames: number }> = ({ durationInFrames })
   );
 };
 
+// Times are in seconds of public/raw.mp4.
 type Shot = { fromS: number; toS: number; render: (d: number) => React.ReactNode };
 
 const SHOTS: Shot[] = [
@@ -192,8 +206,8 @@ const SHOTS: Shot[] = [
     render: () => <Clip src="broll/tsuda-article.mp4" playbackRate={0.9} />,
   },
   { fromS: 20.4, toS: 29.6, render: (d) => <VideoWall durationInFrames={d} /> },
-  { fromS: 79.0, toS: 84.2, render: () => <Clip src="broll/spiderman.mp4" /> },
-  { fromS: 84.2, toS: 90.2, render: () => <Clip src="broll/wolverine-deadpool.mp4" /> },
+  { fromS: 79.0, toS: 84.2, render: () => <Clip src="broll/spiderman.mp4" credit="Credit: Timeory (YouTube)" /> },
+  { fromS: 84.2, toS: 90.2, render: () => <Clip src="broll/wolverine-deadpool.mp4" credit="Credit: Timeory (YouTube)" /> },
   {
     fromS: 117.1,
     toS: 129.7,
@@ -208,12 +222,11 @@ const SHOTS: Shot[] = [
 ];
 
 export const BRoll: React.FC = () => {
-  const { fps } = useVideoConfig();
   return (
     <AbsoluteFill>
       {SHOTS.map((shot) => {
-        const from = Math.round(shot.fromS * fps);
-        const d = Math.round(shot.toS * fps) - from;
+        const from = toFrame(shot.fromS);
+        const d = toFrame(shot.toS) - from;
         return (
           <Sequence key={shot.fromS} from={from} durationInFrames={d} layout="none">
             <Cutaway durationInFrames={d}>{shot.render(d)}</Cutaway>

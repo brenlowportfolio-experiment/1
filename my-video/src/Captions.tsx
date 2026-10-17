@@ -9,8 +9,15 @@ import {
 } from "remotion";
 import rawCaptions from "../public/captions.json";
 import { ACCENT, fontFamily, SAFE } from "./theme";
+import { toMs } from "./timeline";
 
-const captions = rawCaptions as Caption[];
+// Word timings shifted onto the edited timeline with pauses removed.
+const captions = (rawCaptions as Caption[]).map((c) => ({
+  ...c,
+  startMs: toMs(c.startMs),
+  endMs: toMs(c.endMs),
+  timestampMs: c.timestampMs === null ? null : toMs(c.timestampMs),
+}));
 
 type Page = ReturnType<typeof createTikTokStyleCaptions>["pages"][number];
 
