@@ -135,9 +135,9 @@ const Versus: React.FC<{ durationInFrames: number }> = ({ durationInFrames }) =>
   const frame = useCurrentFrame();
   const progress = useEnterExit(durationInFrames);
   const names = [
-    { who: "SPIDER-MAN", actor: "Tobey Maguire", color: "#E63946", at: 45 },
-    { who: "WOLVERINE", actor: "Hugh Jackman", color: "#F4C430", at: 90 },
-    { who: "DEADPOOL", actor: "Ryan Reynolds", color: "#B5172F", at: 160 },
+    { who: "SPIDER-MAN", actor: "Tobey Maguire", color: "#E63946", at: 321 },
+    { who: "WOLVERINE", actor: "Hugh Jackman", color: "#F4C430", at: 381 },
+    { who: "DEADPOOL", actor: "Ryan Reynolds", color: "#B5172F", at: 456 },
   ];
   return (
     <AbsoluteFill style={{ paddingTop: SAFE.top + 10, alignItems: "center" }}>
@@ -217,7 +217,7 @@ const CUES: Cue[] = [
   { fromS: 6.3, toS: 9.1, render: (d) => <Chapter label="THE JAPAN CASE" durationInFrames={d} /> },
   {
     fromS: 9.2,
-    toS: 19.8,
+    toS: 12.4,
     render: (d) => (
       <Card kicker="TOKYO DISTRICT COURT" title="Jujutsu Kaisen voice actor vs TikTok" durationInFrames={d} />
     ),
@@ -228,8 +228,7 @@ const CUES: Cue[] = [
     render: (d) => (
       <Card
         kicker="ANONYMOUS TIKTOK ACCOUNT"
-        title="188 videos"
-        detail="imitating the actor's voice"
+        title="Videos copying his voice"
         durationInFrames={d}
       />
     ),
@@ -260,9 +259,9 @@ const CUES: Cue[] = [
       />
     ),
   },
-  { fromS: 71.6, toS: 88.2, render: (d) => <Versus durationInFrames={d} /> },
+  { fromS: 71.6, toS: 90.2, render: (d) => <Versus durationInFrames={d} /> },
   {
-    fromS: 88.4,
+    fromS: 90.3,
     toS: 95.6,
     render: (d) => (
       <Card kicker="THE CATCH" title="No permission from the actors" durationInFrames={d} />

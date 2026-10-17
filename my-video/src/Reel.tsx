@@ -1,4 +1,5 @@
 import { AbsoluteFill, OffthreadVideo, staticFile } from "remotion";
+import { BRoll } from "./BRoll";
 import { Captions } from "./Captions";
 import { Overlays, Shade } from "./Overlays";
 
@@ -13,6 +14,7 @@ export const Reel: React.FC = () => {
         src={staticFile("raw.mp4")}
         style={{ width: "100%", height: "100%", objectFit: "cover" }}
       />
+      <BRoll />
       <Shade />
       <Overlays />
       <Captions />
