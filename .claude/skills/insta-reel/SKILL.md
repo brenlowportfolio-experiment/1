@@ -1,0 +1,86 @@
+---
+name: insta-reel
+description: Turn a raw talking-head video into an Instagram reel with Remotion in my-video/. Covers word-by-word captions from whisper.cpp, hook and chapter titles, info cards, b-roll cutaways, licensed web photos with credits, pause removal and rendering in the cloud container. Use when the user uploads footage or clips and asks for subtitles, titles, images, b-roll, pause trimming, caption restyling or a re-render of a reel.
+---
+
+# Instagram reel from raw footage
+
+Project: `my-video/` (Remotion 4.0.536). Composition id `Reel`, 1080x1920, 30 fps.
+
+## Files
+
+| File | Role |
+|---|---|
+| `public/raw.mp4` | Talking-head source. Rename uploads to this. |
+| `public/captions.json` | Word timings in raw.mp4 time. |
+| `public/broll/*.mp4` | User-supplied cutaway clips. |
+| `public/photos/*` | Web photos (licensed, credited). |
+| `public/fonts/montserrat.woff2` | Bundled variable font, weights 700 to 900. |
+| `src/edit.json` | Kept segments after pause removal. |
+| `src/timeline.ts` | `toFrame(seconds)` and `toMs(ms)` map raw.mp4 time to the edited timeline. |
+| `src/Overlays.tsx` | `CUES`: hook, chapter labels, info cards, versus tiles, call to action. |
+| `src/BRoll.tsx` | `SHOTS`: full-screen cutaways, generated graphics, photos, credits. |
+| `src/Captions.tsx` | Caption pages and styling. |
+| `src/theme.ts` | Font, colours, Reels safe area. |
+
+All cue and shot times are written in **raw.mp4 seconds**. Never hand-convert to edited time; `toFrame` does it.
+
+## Workflow
+
+1. **Get footage in.** Chat attachments land in `/root/.claude/uploads/<session>/`. Otherwise the user uploads on github.com into `my-video/public/` on the working branch and you `git pull`. An empty folder needs a `.gitkeep` to show on GitHub. Browser upload limit 25 MB, git 100 MB.
+2. **Inspect.** `ffprobe` for size, length, audio. Build a contact sheet (`fps=N/duration,scale,tile`) and Read it to see content. You cannot hear audio.
+3. **Transcribe.** `node scripts/transcribe.mjs small en`. Force the language: auto-detect picked Malay for English speech and produced garbage. Then fix known mishears in `captions.json` (example: "open AI" to "OpenAI") and strip quote characters.
+4. **Remove pauses.** `node scripts/find-pauses.mjs 0.35 0.24` (silencedetect at -35 dB, keeps 0.24 s of each pause). Verify after render: silencedetect on the output should report 0 pauses at 0.35 s.
+5. **Place overlays** from word timings: print tokens with `startMs` around each topic and set `fromS`/`toS` to sentence boundaries.
+6. **Place b-roll** where the speaker names the subject shown. Trim or change `playbackRate` to fit the spoken span. Supplied clips have no audio; the voice keeps playing under them.
+7. **Fill gaps** with a generated graphic (example: `VideoWall` counting to 188) or a licensed web photo (see Sources).
+8. **Check stills** at key frames before any full render (see Commands). Draw a centre line with ffmpeg `drawbox` to check alignment.
+9. **Render**, verify duration and audio with ffprobe, rename to `out/reel-instagram.mp4`, send with SendUserFile. `out/` is gitignored; the video never goes in git.
+10. **Commit and push** source changes. Then update this skill (see Improving this skill).
+
+## Style rules (user approved)
+
+- Captions: sentence case, Montserrat 700, 50 px, white on `rgba(0,0,0,0.55)` rounded box, spoken word in yellow `#FFD60A`, 4-frame fade, phrases grouped at 1400 ms. No all caps, no thick outline, no pop scaling. The user found the loud TikTok style "too outstanding for info".
+- Centre everything on the vertical centre line. Use equal left and right insets (`SAFE.right` both sides for captions). Unequal insets made captions sit left of centre.
+- Keep text inside the Reels safe area: top 220, bottom 480, right 160.
+- During cutaways, a dark band sits behind the captions so they read over busy footage.
+- Credits: small centred line below the caption band. Formats used: `Credit: Timeory (YouTube)` for user-supplied fan clips; `Photo: <author>, <license>, via Wikimedia Commons` for Commons photos.
+- Hook title over the first sentence, chapter labels at topic turns, info cards for names, numbers and verdicts, a call to action at the end.
+
+## Sources for images
+
+- Prefer user-supplied clips and photos.
+- Web photos: Wikimedia Commons only, with a license that allows reuse (CC BY, CC BY-SA, public domain). Read the license and author from the file page and put the credit on screen. Do not use press or stock photos.
+- Generated: build motion graphics in Remotion. No image generation tool is available.
+
+## Container gotchas
+
+- Network: the environment must allow `huggingface.co` (whisper models). The user set network access to Full.
+- Node `fetch` ignores the HTTPS proxy. Download with `curl` instead: whisper model into `whisper.cpp/ggml-small.bin`; Remotion's Chrome download fails, so pass `--browser-executable=/opt/pw-browsers/chromium_headless_shell-1194/chrome-linux/headless_shell`.
+- Chromium does not trust the proxy CA, so Google Fonts fail at render time. Fonts are bundled locally in `public/fonts`.
+- Wikimedia: the API rate-limits the shared IP; fetch the file page HTML with a browser user agent instead. Originals return 400; use a standard thumbnail width such as `/thumb/.../1280px-<name>`.
+- Run `./node_modules/.bin/remotion` rather than `npx remotion` in background jobs; `npx` failed once with "could not determine executable".
+- Exclude `whisper.cpp` and `scripts` from `tsconfig.json`, or typecheck fails on CMake files.
+
+## Commands
+
+```bash
+cd my-video
+B=/opt/pw-browsers/chromium_headless_shell-1194/chrome-linux/headless_shell
+npx tsc --noEmit && npx eslint src
+./node_modules/.bin/remotion still Reel /tmp/f.png --frame=900 --scale=0.4 --browser-executable=$B --log=error
+./node_modules/.bin/remotion render Reel out/reel.mp4 --crf=23 --browser-executable=$B --concurrency=4 --log=error
+```
+
+Full render of 2:22 takes about 6 minutes; run it in the background. `--crf=23` gives about 65 MB.
+
+## Improving this skill
+
+At the end of every reel job, update this file in the same commit:
+- Add new user preferences to Style rules, and replace any rule the user overturned.
+- Add new environment failures and their fixes to Container gotchas.
+- Add a line to the log below.
+
+## Log
+
+- 2026-10-17: AI voice cloning reel. Captions, hook, chapters, cards, 3 supplied clips, generated 188-tile wall, Commons photo of Scarlett Johansson, pauses removed (2:34 to 2:22), captions toned down and centred.
