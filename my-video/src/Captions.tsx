@@ -3,7 +3,7 @@ import { useMemo } from "react";
 import {
   AbsoluteFill,
   Sequence,
-  spring,
+  interpolate,
   useCurrentFrame,
   useVideoConfig,
 } from "remotion";
@@ -25,7 +25,7 @@ const CaptionPage: React.FC<{ page: Page }> = ({ page }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const nowMs = page.startMs + (frame / fps) * 1000;
-  const pop = spring({ frame, fps, config: { damping: 200 }, durationInFrames: 6 });
+  const fade = interpolate(frame, [0, 4], [0, 1], { extrapolateRight: "clamp" });
 
   return (
     <AbsoluteFill
@@ -33,30 +33,31 @@ const CaptionPage: React.FC<{ page: Page }> = ({ page }) => {
         justifyContent: "flex-end",
         alignItems: "center",
         paddingBottom: SAFE.bottom + 40,
-        paddingLeft: SAFE.side,
+        // Same inset on both sides so captions sit on the centre line.
+        paddingLeft: SAFE.right,
         paddingRight: SAFE.right,
       }}
     >
       <div
         style={{
           fontFamily,
-          fontWeight: 900,
-          fontSize: 78,
-          lineHeight: 1.15,
+          fontWeight: 700,
+          fontSize: 50,
+          lineHeight: 1.3,
           textAlign: "center",
-          textTransform: "uppercase",
           color: "white",
-          WebkitTextStroke: "14px black",
-          paintOrder: "stroke",
-          transform: `scale(${0.85 + 0.15 * pop})`,
+          background: "rgba(0,0,0,0.55)",
+          borderRadius: 16,
+          padding: "10px 22px",
+          opacity: fade,
           whiteSpace: "pre-wrap",
         }}
       >
-        {page.tokens.map((t) => {
+        {page.tokens.map((t, i) => {
           const active = t.fromMs <= nowMs && t.toMs > nowMs;
           return (
             <span key={t.fromMs} style={{ color: active ? ACCENT : "white" }}>
-              {t.text}
+              {i === 0 ? t.text.trimStart() : t.text}
             </span>
           );
         })}
@@ -71,7 +72,7 @@ export const Captions: React.FC = () => {
     () =>
       createTikTokStyleCaptions({
         captions,
-        combineTokensWithinMilliseconds: 900,
+        combineTokensWithinMilliseconds: 1400,
       }),
     [],
   );

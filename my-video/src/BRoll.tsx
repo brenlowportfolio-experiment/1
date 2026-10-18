@@ -41,7 +41,9 @@ const Credit: React.FC<{ text: string }> = ({ text }) => (
   <div
     style={{
       position: "absolute",
-      left: 110,
+      left: 0,
+      right: 0,
+      textAlign: "center",
       bottom: 270,
       fontFamily,
       fontWeight: 700,

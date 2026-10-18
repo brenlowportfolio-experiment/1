@@ -99,7 +99,7 @@ const Card: React.FC<{
       style={{
         paddingTop: SAFE.top + 20,
         paddingLeft: SAFE.side,
-        paddingRight: SAFE.right - 40,
+        paddingRight: SAFE.side,
         alignItems: "center",
       }}
     >
