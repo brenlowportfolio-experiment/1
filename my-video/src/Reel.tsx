@@ -1,6 +1,7 @@
 import { AbsoluteFill, OffthreadVideo, Sequence, staticFile } from "remotion";
 import { BRoll } from "./BRoll";
 import { Captions } from "./Captions";
+import { Music } from "./Music";
 import { Overlays, Shade } from "./Overlays";
 import { FPS, KEPT_SEGMENTS, OUTPUT_FRAMES } from "./timeline";
 
@@ -19,6 +20,7 @@ export const Reel: React.FC = () => {
           />
         </Sequence>
       ))}
+      <Music />
       <BRoll />
       <Shade />
       <Overlays />
