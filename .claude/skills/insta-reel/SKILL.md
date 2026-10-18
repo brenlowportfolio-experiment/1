@@ -53,7 +53,10 @@ All cue and shot times are written in **raw.mp4 seconds**. Never hand-convert to
 - Web photos: Wikimedia Commons only, with a license that allows reuse (CC BY, CC BY-SA, public domain). Read the license and author from the file page and put the credit on screen. Do not use press or stock photos.
 - Generated: build motion graphics in Remotion. No image generation tool is available.
 
-## Container gotchas
+## Container gotchas (cloud sessions only)
+
+On a local machine none of this applies: Remotion downloads its own Chrome, Node reaches Hugging Face directly and no `--browser-executable` flag is needed.
+
 
 - Network: the environment must allow `huggingface.co` (whisper models). The user set network access to Full.
 - Node `fetch` ignores the HTTPS proxy. Download with `curl` instead: whisper model into `whisper.cpp/ggml-small.bin`; Remotion's Chrome download fails, so pass `--browser-executable=/opt/pw-browsers/chromium_headless_shell-1194/chrome-linux/headless_shell`.
@@ -66,10 +69,11 @@ All cue and shot times are written in **raw.mp4 seconds**. Never hand-convert to
 
 ```bash
 cd my-video
+# Cloud only; leave B empty locally.
 B=/opt/pw-browsers/chromium_headless_shell-1194/chrome-linux/headless_shell
 npx tsc --noEmit && npx eslint src
-./node_modules/.bin/remotion still Reel /tmp/f.png --frame=900 --scale=0.4 --browser-executable=$B --log=error
-./node_modules/.bin/remotion render Reel out/reel.mp4 --crf=23 --browser-executable=$B --concurrency=4 --log=error
+./node_modules/.bin/remotion still Reel /tmp/f.png --frame=900 --scale=0.4 ${B:+--browser-executable=$B} --log=error
+./node_modules/.bin/remotion render Reel out/reel.mp4 --crf=23 ${B:+--browser-executable=$B} --concurrency=4 --log=error
 ```
 
 Full render of 2:22 takes about 6 minutes; run it in the background. `--crf=23` gives about 65 MB.
