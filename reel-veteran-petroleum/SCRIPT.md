@@ -4,7 +4,7 @@ Sources:
 - The Russian Federation v Veteran Petroleum Ltd [2026] SGCA(I) 5 ("VP"), judgment 22 September 2026, delivered by Lord Mance IJ for a five-judge bench (Menon CJ, Chong JCA, Ang JCA, Mance IJ, French IJ).
 - Background only: Merck Sharp & Dohme Corp v Merck KGaA [2021] 1 SLR 1102 ("Merck"), where the Singapore Court of Appeal first set out the test for transnational issue estoppel. VP is the main authority throughout and restates that test at [18]–[23].
 
-Target: about 2:50 spoken at a normal pace. Each section gets a question card on screen while you speak.
+Target: about 3:00 spoken at a normal pace. Each section gets a question card on screen while you speak.
 
 ---
 
@@ -12,6 +12,13 @@ Target: about 2:50 spoken at a normal pace. Each section gets a question card on
 **On screen:** Can a state make you fight the same case in every country?
 
 **Say:** Russia lost on jurisdiction in the Dutch appeal courts, and again in England. In Singapore it argued: hear it all again from scratch. Here's why the Court of Appeal said no.
+
+## The facts (about 15 s)
+**On screen:** Yukos shareholders v Russia · 3 awards · about US$60bn
+
+**Say:** In 2014, former majority shareholders of Yukos Oil won three arbitration awards against Russia under the Energy Charter Treaty, worth about 60 billion US dollars, in an arbitration seated in the Netherlands. When they tried to enforce the awards in Singapore, Russia claimed state immunity, saying it never agreed to arbitrate, the very point the Dutch appeal courts had already rejected.
+
+**Source:** VP [1]–[5], [8]–[9]
 
 ## Q1. What is issue estoppel and why do courts have it? (about 20 s)
 **On screen:** 1. Issue estoppel / Decided once, decided for good
