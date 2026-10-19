@@ -1,7 +1,7 @@
 // Voice: API settings, the 3 to 5 writing samples that get injected into
 // every system prompt, optional voice notes, and backup.
 
-import { el, clear, countWords, toast } from '../lib/dom.js';
+import { el, clear, countWords, toast, ask, refresh } from '../lib/dom.js';
 import * as store from '../lib/store.js';
 import * as claude from '../lib/claude.js';
 import { voiceNotesPrompt } from '../lib/prompts.js';
@@ -10,19 +10,16 @@ export function render(outlet) {
   const st = store.get();
 
   const settings = el('section', { class: 'panel' }, [
-    el('h2', { text: 'Connection' }),
-    el('p', {
-      class: 'muted',
-      text: 'Your key is stored in this browser only and sent only to api.anthropic.com.',
-    }),
-    field('API key', keyInput(st)),
+    el('h2', { text: claude.NEEDS_KEY ? 'Connection' : 'Model' }),
+    el('p', { class: 'muted', text: claude.CONNECTION_NOTE }),
+    claude.NEEDS_KEY && field('API key', keyInput(st)),
     el('div', { class: 'row' }, [
       field(
         'Model',
         select(
-          store.MODELS.map((m) => [m.id, m.label]),
-          st.settings.model,
-          (v) => store.update((s) => (s.settings.model = v)),
+          claude.MODEL_CHOICES,
+          st.settings[claude.MODEL_SETTING] || claude.MODEL_CHOICES[0][0],
+          (v) => store.update((s) => (s.settings[claude.MODEL_SETTING] = v)),
         ),
       ),
       field(
@@ -135,8 +132,8 @@ function sampleCard(s, i, redraw, recount) {
       el('button', {
         class: 'btn btn-ghost',
         text: 'Remove',
-        onclick: () => {
-          if (s.text.trim() && !confirm('Remove this sample?')) return;
+        onclick: async () => {
+          if (s.text.trim() && !(await ask('Remove this sample?', 'Remove'))) return;
           store.removeSample(s.id);
           redraw();
         },
@@ -185,7 +182,7 @@ function dataPanel() {
     try {
       store.importJSON(await f.text());
       toast('Backup restored.');
-      location.reload();
+      refresh();
     } catch (err) {
       toast(err.message, 'error');
     }
@@ -194,21 +191,16 @@ function dataPanel() {
     el('h2', { text: 'Data' }),
     el('p', {
       class: 'muted',
-      text: 'Everything is stored in this browser. Export to move it to another machine or keep a backup. Exports leave out your API key.',
+      text: claude.STORAGE_NOTE,
     }),
     el('div', { class: 'row wrap' }, [
       el('button', {
         class: 'btn',
         text: 'Export',
-        onclick: () => {
-          const blob = new Blob([store.exportJSON()], { type: 'application/json' });
-          const a = el('a', {
-            href: URL.createObjectURL(blob),
-            download: `voicebank-${new Date().toISOString().slice(0, 10)}.json`,
-          });
-          a.click();
-          URL.revokeObjectURL(a.href);
-        },
+        onclick: () =>
+          claude
+            .saveFile(`voicebank-${new Date().toISOString().slice(0, 10)}.json`, store.exportJSON())
+            .catch((err) => toast(err.message, 'error')),
       }),
       el('button', { class: 'btn', text: 'Import', onclick: () => file.click() }),
       file,

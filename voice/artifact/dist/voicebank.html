@@ -1,0 +1,432 @@
+<title>Voicebank</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,400;7..72,600&family=Public+Sans:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: one centred working column; the library and the drafts read like
+   index cards and manuscript pages. Ink blue on cool paper. */
+:root {
+  --bg: #eef1f4;
+  --surface: #ffffff;
+  --surface-2: #f4f6f9;
+  --text: #18202b;
+  --muted: #5d6877;
+  --line: #d8dee6;
+  --accent: #2547a8;
+  --accent-text: #ffffff;
+  --accent-soft: #e3e9f8;
+  --ok: #23774a;
+  --warn: #9a5b12;
+  --bad: #b3261e;
+  --shadow: 0 1px 2px rgb(16 24 40 / 0.05);
+  --radius: 8px;
+  --font: 'Public Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --serif: 'Literata', 'Iowan Old Style', Georgia, serif;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --bg: #12161c;
+    --surface: #1a2029;
+    --surface-2: #212833;
+    --text: #e6eaf0;
+    --muted: #9aa5b4;
+    --line: #2f3845;
+    --accent: #8fa9f2;
+    --accent-text: #0f1626;
+    --accent-soft: #23304d;
+    --ok: #6fc796;
+    --warn: #e3a95c;
+    --bad: #f08b82;
+    --shadow: none;
+    color-scheme: dark;
+  }
+}
+:root[data-theme='dark'] {
+  --bg: #12161c;
+  --surface: #1a2029;
+  --surface-2: #212833;
+  --text: #e6eaf0;
+  --muted: #9aa5b4;
+  --line: #2f3845;
+  --accent: #8fa9f2;
+  --accent-text: #0f1626;
+  --accent-soft: #23304d;
+  --ok: #6fc796;
+  --warn: #e3a95c;
+  --bad: #f08b82;
+  --shadow: none;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 15px/1.5 var(--font);
+}
+
+a { color: var(--accent); }
+
+h1, h2, h3 { line-height: 1.25; margin: 0 0 0.5rem; text-wrap: balance; }
+h1 { font-family: var(--serif); font-size: 1.9rem; font-weight: 600; }
+h2 { font-size: 1.05rem; }
+h3 { font-size: 0.95rem; margin-top: 1rem; }
+p { margin: 0 0 0.75rem; }
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0 0 auto;
+  height: env(safe-area-inset-top, 0px);
+  z-index: 10;
+  background: var(--surface);
+}
+
+.topbar {
+  position: sticky;
+  top: env(safe-area-inset-top, 0px);
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding-block: 0.6rem;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+}
+.brand {
+  font-family: var(--serif);
+  font-weight: 700;
+  font-size: 1.15rem;
+  color: var(--text);
+  text-decoration: none;
+}
+.nav { display: flex; gap: 0.25rem; margin-left: auto; }
+.nav a {
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  color: var(--muted);
+  text-decoration: none;
+  display: inline-flex;
+  gap: 0.35rem;
+  align-items: center;
+}
+.nav a:hover { color: var(--text); }
+.nav a.active { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+.nav-n { font-size: 0.75rem; opacity: 0.75; }
+
+.outlet {
+  padding-block: 1.5rem 4rem;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.page { max-width: 980px; margin: 0 auto; display: grid; gap: 1rem; }
+.page-head p { color: var(--muted); max-width: 62ch; }
+
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 1.1rem;
+  box-shadow: var(--shadow);
+  display: grid;
+  gap: 0.75rem;
+  min-width: 0;
+}
+.panel-head { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+.panel > h2 { margin: 0; }
+
+.muted { color: var(--muted); }
+.small { font-size: 0.82rem; }
+.spacer { flex: 1; }
+.empty { color: var(--muted); padding: 0.75rem 0; }
+
+.row { display: flex; gap: 0.5rem; align-items: center; min-width: 0; }
+.row > input, .row > select { flex: 1; min-width: 0; }
+.row.wrap { flex-wrap: wrap; }
+.grow { flex: 1 1 12rem; }
+
+.toolbar { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+.toolbar input[type='search'] { flex: 1 1 14rem; }
+
+input, select, textarea {
+  font: inherit;
+  color: inherit;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0.5rem 0.65rem;
+  width: 100%;
+}
+select { width: auto; max-width: 100%; }
+.panel > *, .page > * { min-width: 0; }
+textarea { resize: vertical; line-height: 1.55; }
+input:focus, select:focus, textarea:focus, button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.field { display: grid; gap: 0.3rem; flex: 1; }
+.field-label { font-size: 0.82rem; color: var(--muted); font-weight: 600; }
+.field select { width: 100%; }
+
+.btn {
+  font: inherit;
+  font-weight: 500;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--text);
+  padding: 0.45rem 0.9rem;
+  border-radius: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+  justify-self: start;
+}
+.btn:hover:not(:disabled) { background: var(--surface-2); }
+.btn:disabled { opacity: 0.5; cursor: default; }
+.btn-primary { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
+.btn-primary:hover:not(:disabled) { background: var(--accent); filter: brightness(1.08); }
+.btn-ghost { background: transparent; border-color: transparent; color: var(--muted); }
+.btn-ghost:hover:not(:disabled) { color: var(--text); }
+.btn.small { padding: 0.2rem 0.5rem; font-size: 0.82rem; }
+.danger:hover:not(:disabled) { color: var(--bad); }
+.btn-danger { background: var(--bad); border-color: var(--bad); color: var(--surface); }
+.btn-danger:hover:not(:disabled) { background: var(--bad); filter: brightness(1.08); }
+
+.sync { font-size: 0.78rem; color: var(--muted); white-space: nowrap; }
+
+dialog.ask {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  padding: 1.1rem;
+  width: min(92vw, 24rem);
+  box-shadow: 0 12px 40px rgb(0 0 0 / 0.25);
+}
+dialog.ask::backdrop { background: rgb(10 14 20 / 0.45); }
+.ask-actions { justify-content: flex-end; }
+
+.pill { font-size: 0.8rem; padding: 0.15rem 0.6rem; border-radius: 999px; background: var(--surface-2); }
+.pill-ok { color: var(--ok); }
+.pill-warn { color: var(--warn); }
+
+/* Voice */
+.samples { display: grid; gap: 1rem; }
+.sample { display: grid; gap: 0.4rem; padding-bottom: 1rem; border-bottom: 1px dashed var(--line); }
+
+/* Tags */
+.tagbar, .tag-pick { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; }
+.chip {
+  font: inherit;
+  font-size: 0.84rem;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--text);
+  border-radius: 999px;
+  padding: 0.25rem 0.7rem;
+  cursor: pointer;
+  display: inline-flex;
+  gap: 0.35rem;
+  align-items: center;
+}
+.chip:hover { border-color: var(--accent); }
+.chip-on { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); font-weight: 600; }
+.chip-n { font-size: 0.75rem; color: var(--muted); }
+.drop-hover { outline: 2px dashed var(--accent); outline-offset: 2px; background: var(--accent-soft); }
+.tag-input { width: 9rem; padding: 0.25rem 0.6rem; border-radius: 999px; font-size: 0.84rem; }
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  font-size: 0.78rem;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--muted);
+}
+.tag-x { border: 0; background: none; color: inherit; cursor: pointer; padding: 0 0.1rem; font-size: 0.9rem; line-height: 1; }
+.tag-x:hover { color: var(--bad); }
+
+/* Chunk cards */
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 0.8rem; }
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--line);
+  border-radius: var(--radius);
+  padding: 0.8rem 0.9rem;
+  display: grid;
+  gap: 0.45rem;
+  align-content: start;
+  box-shadow: var(--shadow);
+  min-width: 0;
+}
+.card[draggable='true'] { cursor: grab; }
+.card.dragging, .seq-item.dragging { opacity: 0.4; }
+.card h3 { margin: 0; font-size: 1rem; }
+.card-text {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 5;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.card-top { display: flex; gap: 0.5rem; align-items: center; }
+.card-top .muted { margin-left: auto; }
+.card-tags { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+.card-actions { display: flex; gap: 0.25rem; align-items: center; }
+.card-edit { grid-column: 1 / -1; cursor: default; border-left-color: var(--accent); }
+.grip { color: var(--muted); letter-spacing: -2px; font-size: 0.8rem; user-select: none; }
+.kind { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700; color: var(--muted); }
+.kind-experience { border-left-color: var(--accent); }
+.kind-value { border-left-color: var(--ok); }
+.kind-intro { border-left-color: var(--warn); }
+.kind-closing { border-left-color: var(--muted); }
+
+.split-results { display: grid; gap: 0.6rem; }
+.split-item { display: flex; gap: 0.6rem; align-items: start; padding: 0.6rem; border: 1px solid var(--line); border-radius: 8px; }
+.split-item input { width: auto; margin-top: 0.3rem; }
+.split-item p { margin: 0.25rem 0 0; font-size: 0.9rem; }
+
+/* Match */
+.angle { padding: 0.6rem 0.8rem; background: var(--accent-soft); border-radius: 8px; }
+.reqs { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.4rem; }
+.reqs li { display: grid; grid-template-columns: auto 1fr; gap: 0.25rem 0.6rem; padding: 0.5rem 0; border-bottom: 1px solid var(--line); }
+.req-chunks { grid-column: 2; display: flex; flex-wrap: wrap; gap: 0.3rem; }
+.req-gap .req-text { color: var(--warn); }
+.pri { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; padding: 0.1rem 0.4rem; border-radius: 4px; align-self: start; margin-top: 0.15rem; }
+.pri-must { background: var(--accent-soft); color: var(--accent); }
+.pri-nice { background: var(--surface-2); color: var(--muted); }
+.gaps { font-size: 0.9rem; }
+.gaps ul { margin: 0.3rem 0 0; padding-left: 1.2rem; }
+
+.library { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.3rem; max-height: 22rem; overflow: auto; }
+.lib-item { display: flex; gap: 0.6rem; align-items: center; padding: 0.45rem 0.5rem; border: 1px solid var(--line); border-radius: 8px; }
+.lib-item[draggable='true'] { cursor: grab; }
+.lib-item.in-seq { opacity: 0.55; }
+.lib-body { flex: 1; display: grid; min-width: 0; }
+.lib-body .small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.meter { width: 3rem; height: 6px; border-radius: 3px; background: var(--surface-2); flex: none; overflow: hidden; }
+.meter span { display: block; height: 100%; background: var(--accent); }
+
+/* Sequence */
+.dropzone { border: 1px dashed var(--line); border-radius: var(--radius); padding: 0.5rem; min-height: 4rem; }
+.dropzone .empty { text-align: center; margin: 0; }
+.sequence { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.4rem; }
+.seq-item {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+  padding: 0.5rem 0.6rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  cursor: grab;
+}
+.seq-n {
+  width: 1.6rem; height: 1.6rem; flex: none;
+  border-radius: 50%;
+  display: grid; place-items: center;
+  background: var(--accent); color: var(--accent-text);
+  font-size: 0.8rem; font-weight: 700;
+}
+.seq-body { flex: 1; display: grid; gap: 0.25rem; min-width: 0; }
+.purpose { padding: 0.25rem 0.5rem; font-size: 0.85rem; color: var(--muted); }
+.seq-actions { display: flex; gap: 0.1rem; flex: none; }
+
+/* Questions */
+.questions { display: grid; gap: 1rem; }
+.qcard { display: grid; gap: 0.55rem; padding: 0.9rem; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface-2); }
+.q-head { display: flex; gap: 0.5rem; align-items: start; }
+.q-prompt { font-weight: 600; resize: none; }
+.row > .limit { width: 5.5rem; flex: none; }
+.q-opts > select { flex: none; }
+.answer { font-family: var(--serif); font-size: 1.02rem; line-height: 1.65; min-height: 12rem; }
+.answer.streaming { border-color: var(--accent); }
+.count { font-size: 0.85rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.count.ok { color: var(--ok); }
+.count.over { color: var(--bad); font-weight: 600; }
+
+.toasts { position: fixed; bottom: 1rem; left: 50%; transform: translateX(-50%); display: grid; gap: 0.4rem; z-index: 50; width: min(92vw, 28rem); }
+.toast { padding: 0.6rem 0.9rem; border-radius: 8px; background: var(--text); color: var(--bg); font-size: 0.9rem; box-shadow: 0 4px 16px rgb(0 0 0 / 0.2); }
+.toast-error { background: var(--bad); color: #fff; }
+
+[hidden] { display: none !important; }
+
+@media (max-width: 640px) {
+  .outlet { padding-block: 1rem 3rem; }
+  .topbar { flex-wrap: wrap; }
+  .nav { margin-left: 0; width: 100%; order: 3; }
+  .sync { margin-left: auto; }
+  h1 { font-size: 1.5rem; }
+  .row { flex-wrap: wrap; }
+  .seq-item { flex-wrap: wrap; }
+  .seq-actions { width: 100%; justify-content: flex-end; }
+  .cards { grid-template-columns: 1fr; }
+}
+
+</style>
+<header class="topbar">
+  <a class="brand" href="#assemble">Voicebank</a>
+  <nav id="nav" class="nav"></nav>
+  <span id="sync" class="sync" hidden></span>
+</header>
+<main id="outlet" class="outlet"></main>
+<script type="module">
+var mt=Object.defineProperty;var oe=(e,t)=>{for(var s in t)mt(e,s,{get:t[s],enumerable:!0})};function n(e,t={},s=[]){let a=document.createElement(e);for(let[o,r]of Object.entries(t))r==null||r===!1||(o==="class"?a.className=r:o==="text"?a.textContent=r:o==="value"?a.value=r:o.startsWith("on")&&typeof r=="function"?a.addEventListener(o.slice(2).toLowerCase(),r):o==="dataset"?Object.assign(a.dataset,r):a.setAttribute(o,r===!0?"":r));for(let o of[].concat(s))o==null||o===!1||a.append(o.nodeType?o:document.createTextNode(String(o)));return a}function C(e){for(;e.firstChild;)e.firstChild.remove();return e}function T(e="x"){return`${e}_${Date.now().toString(36)}${Math.random().toString(36).slice(2,7)}`}function O(e){let t=(e||"").trim();return t?t.split(/\s+/).length:0}function Le(e,t){return t==="chars"?(e||"").length:O(e)}function k(e,t="info"){let s=document.getElementById("toasts");s||(s=n("div",{id:"toasts",class:"toasts","aria-live":"polite"}),document.body.append(s));let a=n("div",{class:`toast toast-${t}`,text:e});s.append(a),setTimeout(()=>a.remove(),t==="error"?8e3:3500)}function Y(e,t){let s=null;e.addEventListener("dragstart",a=>{let o=a.target.closest("[data-id]");!o||o.parentElement!==e||(s=o,o.classList.add("dragging"),a.dataTransfer.effectAllowed="move",a.dataTransfer.setData("text/plain",o.dataset.id))}),e.addEventListener("dragover",a=>{if(!s)return;a.preventDefault();let o=[...e.children].find(r=>{if(r===s)return!1;let i=r.getBoundingClientRect();return a.clientY<i.top+i.height/2});o?e.insertBefore(s,o):e.append(s)}),e.addEventListener("dragend",()=>{s&&(s.classList.remove("dragging"),s=null,t([...e.children].map(a=>a.dataset.id).filter(Boolean)))})}function R(e,t,s){let a=t+s;if(a<0||a>=e.length)return e;let o=e.slice();return[o[t],o[a]]=[o[a],o[t]],o}function L(e,t="Delete"){return new Promise(s=>{let a=n("dialog",{class:"ask"},[n("p",{text:e}),n("div",{class:"row ask-actions"},[n("button",{class:"btn btn-ghost",value:"cancel",text:"Cancel",onclick:()=>a.close("cancel")}),n("button",{class:"btn btn-danger",text:t,onclick:()=>a.close("ok")})])]);a.addEventListener("close",()=>{s(a.returnValue==="ok"),a.remove()}),document.body.append(a),a.showModal()})}function V(){window.dispatchEvent(new Event("vb:refresh"))}var Te="voicebank.v1",F=[{id:"experience",label:"Experience"},{id:"value",label:"Value proposition"},{id:"intro",label:"Introduction"},{id:"closing",label:"Closing"}],gt=["Analytical Rigor","Cross-Functional Leadership","Problem Solving","Stakeholder Management","Execution","Communication","Technical Depth","Strategy","Mentorship","Customer Focus"];var G=5,B=3;function z(){return{settings:{apiKey:"",model:"claude-opus-5-5",effort:"medium"},samples:[],voiceNotes:"",tags:gt.slice(),chunks:[],applications:[],currentApp:null}}var E=yt(),re=new Set;function yt(){try{let e=localStorage.getItem(Te);if(e)return{...z(),...JSON.parse(e)}}catch{}return z()}function ie(){E.localSavedAt=Date.now();try{localStorage.setItem(Te,JSON.stringify(E))}catch{}for(let e of re)e(E)}function f(){return E}function X(e){return re.add(e),()=>re.delete(e)}function v(e){e(E),ie()}function je(){if(E.samples.length>=G)return null;let e={id:T("s"),title:"",text:""};return v(t=>t.samples.push(e)),e}function ce(e,t){v(s=>Object.assign(s.samples.find(a=>a.id===e),t))}function Me(e){v(t=>t.samples=t.samples.filter(s=>s.id!==e))}function K(e){let t=e.trim();!t||E.tags.some(s=>s.toLowerCase()===t.toLowerCase())||v(s=>s.tags.push(t))}function De(e){v(t=>{t.tags=t.tags.filter(s=>s!==e);for(let s of t.chunks)s.tags=s.tags.filter(a=>a!==e)})}function le(e={}){let t={id:T("c"),kind:"experience",title:"",text:"",tags:[],...e};for(let s of t.tags)K(s);return v(s=>s.chunks.unshift(t)),t}function Q(e,t){if(t.tags)for(let s of t.tags)K(s);v(s=>Object.assign(s.chunks.find(a=>a.id===e),t))}function ue(e){v(t=>{t.chunks=t.chunks.filter(s=>s.id!==e);for(let s of t.applications)s.sequence=s.sequence.filter(a=>a.chunkId!==e)})}function pe(e){v(t=>{let s=new Map(t.chunks.map(i=>[i.id,i])),a=new Set(e),o=t.chunks.map((i,p)=>a.has(i.id)?p:-1).filter(i=>i>=0),r=t.chunks.slice();o.forEach((i,p)=>r[i]=s.get(e[p])),t.chunks=r})}function I(e){return E.chunks.find(t=>t.id===e)}function de(){let e={id:T("a"),company:"",role:"",jd:"",analysis:null,sequence:[],questions:[{id:T("q"),prompt:"Cover letter",limit:300,unit:"words",answer:"",note:""}],createdAt:Date.now()};return v(t=>{t.applications.unshift(e),t.currentApp=e.id}),e}function q(e=E.currentApp){return E.applications.find(t=>t.id===e)||null}function N(e,t){v(s=>Object.assign(s.applications.find(a=>a.id===e),t))}function Oe(e){v(t=>{t.applications=t.applications.filter(s=>s.id!==e),t.currentApp===e&&(t.currentApp=t.applications[0]?.id||null)})}function Ie(e,t,s){v(a=>{let o=a.applications.find(r=>r.id===e);Object.assign(o.questions.find(r=>r.id===t),s)})}function Pe(e){E={...z(),...e},ie()}function Re(e=!1){let t=JSON.parse(JSON.stringify(E));return e||(t.settings.apiKey=""),JSON.stringify(t,null,2)}function Be(e){let t=JSON.parse(e);if(!t||!Array.isArray(t.chunks))throw new Error("Not a Voicebank backup.");let s=E.settings.apiKey;E={...z(),...t},E.settings.apiKey||(E.settings.apiKey=s),ie()}var j=null,J=new Map,me=null,Ke=null,he=!1,fe=!1;function Z(e,t){let s=document.getElementById("sync");s&&(s.hidden=!1,s.textContent=e,s.title=t||"")}function wt(e){let t=new Map;t.set("profile",{samples:e.samples,voiceNotes:e.voiceNotes,tags:e.tags,settings:{...e.settings,apiKey:""},currentApp:e.currentApp,order:e.applications.map(s=>s.id)}),t.set("chunks",{list:e.chunks});for(let s of e.applications)t.set(`app-${s.id}`,{app:s});return t}function vt(e){let t=e.get("profile")||{},s=(t.order||[]).map(a=>e.get(`app-${a}`)?.app).filter(Boolean);return{samples:t.samples||[],voiceNotes:t.voiceNotes||"",tags:t.tags||f().tags,settings:{...f().settings,...t.settings||{},apiKey:""},currentApp:t.currentApp||s[0]?.id||null,chunks:e.get("chunks")?.list||[],applications:s}}function Je(){j&&(clearTimeout(Ke),Ke=setTimeout(We,1200))}async function We(){if(he){fe=!0;return}he=!0;try{let e=wt(f()),t=!1;for(let[o,r]of e){if(o==="profile")continue;let i=JSON.stringify(r);J.get(o)!==i&&(await j.doc(o).set(r),J.set(o,i),t=!0)}for(let o of[...J.keys()])e.has(o)||(await j.doc(o).delete(),J.delete(o),t=!0);let s=e.get("profile"),a=JSON.stringify(s);(t||me!==a)&&(await j.doc("profile").set({...s,savedAt:Date.now()}),me=a),Z("Saved to your account")}catch(e){Z("Not saved to account","Changes are kept in this browser. They will sync on your next edit."),e?.code==="quota_exceeded"&&k("Account storage is full. Delete old applications.","error")}finally{he=!1,fe&&(fe=!1,Je())}}async function Ue(){let e=window.claude?.use,[t,s]=e?await Promise.all([e("db"),e("user")]):[null,null],a=s?await s.id():null;if(!t||!a){Z("This browser only","Sign in to claude.ai to save across devices.");return}j=t.collection(`data/users/${a}`);try{let o=await j.get();if(!o.empty){let r=new Map(o.docs.map(p=>[p.id,p.data()]));for(let[p,d]of r)if(p==="profile"){let{savedAt:l,...c}=d;me=JSON.stringify(c)}else J.set(p,JSON.stringify(d));(Number(r.get("profile")?.savedAt)||0)>=(f().localSavedAt||0)&&(Pe(vt(r)),V())}}catch{Z("This browser only","Your account copy could not be read. Changes stay in this browser."),j=null;return}X(Je),await We()}var bt=["I am excited to","I'm thrilled","passionate about","leverage","spearheaded","synergy","dynamic","fast-paced","proven track record","results-driven","delve","testament to","tapestry","navigate the complexities","in today\u2019s","I believe I would be a great fit","unique blend"];function w(e){return String(e||"").replace(/</g,"\u2039")}function He(e,t){return["You write job application material as one specific person, in their own voice. You are not writing about them and you are not a careers coach polishing their prose. The reader should not be able to tell that anyone but this person wrote it.","","Below are samples of their real writing. Before writing anything, study them for:","- vocabulary: which words they reach for, which register, how often they use jargon","- sentence rhythm: typical length, how much it varies, how sentences open","- structure: how they open and close a piece, paragraph length, use of lists","- punctuation habits: dashes, semicolons, parentheses, contractions","- stance: how direct they are, how they hedge, whether they use humour","Match all of it. Where the samples and the conventions of a cover letter disagree, follow the samples.","",`<writing_samples>
+${e.filter(o=>o.text.trim()).map((o,r)=>`<sample index="${r+1}" title="${w(o.title||"Untitled")}">
+${w(o.text.trim())}
+</sample>`).join(`
+
+`)||"(none provided yet: write plainly and concretely)"}
+</writing_samples>`,t?.trim()?`
+<voice_notes>
+${w(t.trim())}
+</voice_notes>`:"","","Standing rules for everything you write as this person:","- Use only facts present in the experience chunks you are given. Never invent employers, titles, dates, numbers or outcomes. If a requirement has no supporting chunk, do not claim it.",`- Avoid the stock phrasing of generated application text, including: ${bt.map(o=>`"${o}"`).join(", ")}. Avoid any phrase you would expect to find in a hundred other applications.`,"- Do not use em dashes unless the samples do.","- Do not copy the job description\u2019s phrasing wholesale. Borrow at most a few of its key terms, where they fit naturally.","- Chunks are raw material, not paragraphs to paste. Rewrite them, merge them, cut what does not serve the question, and supply the connective reasoning that makes one point lead to the next."].join(`
+`)}function Ye(e){return e.map(t=>`<chunk id="${t.id}" kind="${t.kind}" tags="${w(t.tags.join(", "))}" title="${w(t.title)}">
+${w(t.text)}
+</chunk>`).join(`
+`)}var Ve={type:"object",additionalProperties:!1,required:["role_summary","angle","requirements","sequence","gaps"],properties:{role_summary:{type:"string"},angle:{type:"string"},requirements:{type:"array",items:{type:"object",additionalProperties:!1,required:["requirement","priority","chunk_ids"],properties:{requirement:{type:"string"},priority:{type:"string",enum:["must","nice"]},chunk_ids:{type:"array",items:{type:"string"}}}}},sequence:{type:"array",items:{type:"object",additionalProperties:!1,required:["chunk_id","purpose"],properties:{chunk_id:{type:"string"},purpose:{type:"string"}}}},gaps:{type:"array",items:{type:"string"}}}};function ze(e,t){return[`<job_description company="${w(e.company)}" role="${w(e.role)}">
+${w(e.jd)}
+</job_description>`,"",`<experience_chunks>
+${Ye(t)}
+</experience_chunks>`,"","Match this person\u2019s chunks to the job.","- role_summary: two sentences on what the employer actually needs, read between the lines of the posting.","- angle: one sentence on the single through line that connects this person to the role. This becomes the spine of everything written for this application.","- requirements: the 4 to 8 requirements that matter most, each marked must or nice, with the ids of chunks that give real evidence for it (empty if none).","- sequence: the chunks to use, in the order that tells the strongest story for this role, typically 3 to 6. Usually an introduction or value chunk first, then evidence in descending relevance, then a closing if one fits. purpose says in a few words what that chunk does in the story.","- gaps: requirements with weak or no evidence, phrased so the person knows what chunk to write.","Use only chunk ids that appear above."].join(`
+`)}function Fe({app:e,question:t,chunks:s,others:a,instruction:o,previous:r}){let i=t.unit==="chars"?"characters":"words",p=Number(t.limit)||250,d=Math.round(p*.85),l=[`<job company="${w(e.company)}" role="${w(e.role)}">`,e.analysis?`What they need: ${w(e.analysis.role_summary)}
+Through line for this application: ${w(e.analysis.angle)}`:`<job_description>
+${w(e.jd)}
+</job_description>`,"</job>","",`<chunks_in_order>
+${Ye(s)}
+</chunks_in_order>`];return a.length&&l.push("","<already_written_for_this_application>",...a.map(c=>`<answer question="${w(c.prompt)}">
+${w(c.answer)}
+</answer>`),"</already_written_for_this_application>","These answers go to the same reader. Do not reuse their opening, their lead example, or their distinctive phrases. Where the same experience must appear again, come at it from a different side and keep it brief."),r&&o&&l.push("",`<previous_draft>
+${w(r)}
+</previous_draft>`),l.push("",`<question>${w(t.prompt)}</question>`,`Length: between ${d} and ${p} ${i}. Never exceed ${p}. Count before you finish.`,"Draw on the chunks in the order given unless the question calls for a different emphasis; lead with whatever answers the question most directly. Drop chunks that do not help this particular question."),t.note?.trim()&&l.push(`Extra direction from the person: ${w(t.note.trim())}`),o&&l.push(`Revise the previous draft: ${w(o)}`),l.push("Return only the answer text. No title, no preamble, no sign off unless the question is a letter."),l.join(`
+`)}var Ge={type:"object",additionalProperties:!1,required:["chunks"],properties:{chunks:{type:"array",items:{type:"object",additionalProperties:!1,required:["kind","title","text","tags"],properties:{kind:{type:"string",enum:["experience","value","intro","closing"]},title:{type:"string"},text:{type:"string"},tags:{type:"array",items:{type:"string"}}}}}}};function Xe(e,t){return[`<source>
+${w(e)}
+</source>`,"",`<existing_tags>${t.map(w).join(" | ")}</existing_tags>`,"","Break this professional history into self contained chunks, one achievement, story or claim per chunk, so each can be reused on its own in different applications.","- kind: experience (a specific thing they did, with context and result), value (a claim about what they bring), intro (how they describe who they are), closing.",'- title: 3 to 8 words a person would recognise at a glance, e.g. "Rebuilt pricing model at Acme".',"- text: 40 to 120 words, written in the first person, keeping every concrete fact, number and name from the source and adding none. Keep the person\u2019s own wording where the source has it.","- tags: 1 to 3 themes. Prefer existing tags; add a new one only if none fits."].join(`
+`)}function Qe(){return'From the writing samples only, write 6 to 10 short bullet points describing how this person writes: concrete, checkable habits (sentence length, openings, punctuation, words they favour or never use, tone). No praise, no generic advice. Plain text bullets starting with "- ".'}var W=!1,ye="tier",we=[["complex","Most capable: best voice match, slower"],["default","Balanced"],["quick","Fast: quick edits"]],et="Runs on your claude.ai account and counts toward its usage. claude.ai asks once before this page first uses Claude.",tt="Saved to your claude.ai account, private to you, and kept in this browser as well. Export for a file backup.",Ze=null;function kt(){return Ze??=window.claude?.use?window.claude.use("sample"):Promise.resolve(null),Ze}function ve(e={}){let t=f().settings;return{modelTier:t.tier||"complex",effort:t.effort||"medium",cache:!1,...e}}function be(e){let t=f();return`${He(t.samples,t.voiceNotes)}
+
+---
+
+${e}`}async function ke(){let e=await kt();if(!e)throw{code:"unavailable",message:"Claude is not available in this view."};return e}function ge(e,t){if(e.type==="array")return Array.isArray(t)?t.map(s=>ge(e.items,s)):[];if(e.type==="object"){let s=t&&typeof t=="object"&&!Array.isArray(t)?{...t}:{};for(let[a,o]of Object.entries(e.properties||{}))s[a]=ge(o,s[a]);return s}return e.enum?e.enum.includes(t)?t:e.enum[0]:typeof t=="string"?t:t==null?"":String(t)}async function ee(e,t){let s=await ke(),a=`${be(e)}
+
+Reply with only one JSON object that matches this JSON Schema, and no other text:
+${JSON.stringify(t)}`;return ge(t,await s.json(a,ve()))}async function nt(e){return(await(await ke())(be(e),ve())).text.trim()}async function st(e,t,s){return(await(await ke())(be(e),ve({signal:s,onText:({text:r})=>t(r)}))).text.trim()}function M(e){switch(e?.code){case"cancelled":return"Stopped.";case"not_granted":return"This page is not allowed to use Claude. Allow it from the artifact\u2019s Permissions menu.";case"sampling_disabled":case"unavailable":case"capability_disabled":return"Claude is not available for this account here.";case"rate_limited":return"Usage limit reached for now. Try again later.";case"session_expired":return"Sign in to claude.ai again, then retry.";case"refused":return"Claude declined this request. Edit the input and try again.";case"prompt_too_large":return"Too much text in one request. Shorten the samples or the job description.";case"invalid_json":return"Claude\u2019s reply could not be read. Try again.";case"empty_completion":return"Claude returned nothing. Try again with a shorter input.";default:return e?.message||"Something went wrong reaching Claude. Try again."}}async function at(e,t){let s=window.claude?.use?await window.claude.use("downloads"):null;if(!s)throw new Error("Saving files is not available in this view.");try{await s.save({filename:e,data:t})}catch(a){if(a?.code==="declined"||a?.code==="cancelled")return;throw new Error("The file could not be saved.")}}var Ee={};oe(Ee,{field:()=>te,render:()=>xt,select:()=>Se});function xt(e){let t=f(),s=n("section",{class:"panel"},[n("h2",{text:W?"Connection":"Model"}),n("p",{class:"muted",text:et}),W&&te("API key",Et(t)),n("div",{class:"row"},[te("Model",Se(we,t.settings[ye]||we[0][0],c=>v(u=>u.settings[ye]=c))),te("Effort",Se([["low","Low: fastest"],["medium","Medium"],["high","High: most careful"]],t.settings.effort,c=>v(u=>u.settings.effort=c)))])]),a=n("div",{class:"samples"}),o=n("span",{class:"pill"}),r=n("button",{class:"btn",text:"Add sample"});function i(){let c=f().samples,u=c.filter(h=>h.text.trim()).length;o.textContent=`${u} of ${B} to ${G}`,o.className=`pill ${u>=B?"pill-ok":"pill-warn"}`,r.disabled=c.length>=G}function p(){C(a);let c=f().samples;i(),c.length||a.append(n("p",{class:"empty",text:"Paste 3 to 5 pieces you wrote yourself, unedited by anyone else: an article, an essay, a long email to a colleague. Mixed lengths and occasions give the best read of your voice."})),c.forEach((u,h)=>a.append(St(u,h,p,i)))}r.addEventListener("click",()=>{je(),p(),a.querySelector(".sample:last-child input")?.focus()}),p();let d=n("textarea",{rows:7,placeholder:`- Short declarative sentences, rarely over 20 words
+- Never uses exclamation marks
+- Opens with the point, not with context`,value:t.voiceNotes,oninput:c=>v(u=>u.voiceNotes=c.target.value)}),l=n("button",{class:"btn",text:"Distil from samples"});l.addEventListener("click",async()=>{l.disabled=!0,l.textContent="Reading your samples\u2026";try{d.value=await nt(Qe(),2e3),v(c=>c.voiceNotes=d.value)}catch(c){k(M(c),"error")}finally{l.disabled=!1,l.textContent="Distil from samples"}}),e.append(n("div",{class:"page"},[n("header",{class:"page-head"},[n("h1",{text:"Voice"}),n("p",{text:"Every request to Claude starts with these samples, so drafts take on your vocabulary, sentence rhythm and habits instead of a generic application register."})]),s,n("section",{class:"panel"},[n("div",{class:"panel-head"},[n("h2",{text:"Writing samples"}),o]),a,r]),n("section",{class:"panel"},[n("h2",{text:"Voice notes"}),n("p",{class:"muted",text:"Optional. Explicit rules sent alongside the samples. Distil a first pass, then correct anything that is not you."}),d,l]),Ct()]))}function St(e,t,s,a){let o=n("span",{class:"muted small",text:`${O(e.text)} words`});return n("div",{class:"sample"},[n("div",{class:"row"},[n("input",{type:"text",placeholder:`Sample ${t+1} title, e.g. "Blog post on pricing"`,value:e.title,oninput:r=>ce(e.id,{title:r.target.value})}),n("button",{class:"btn btn-ghost",text:"Remove",onclick:async()=>{e.text.trim()&&!await L("Remove this sample?","Remove")||(Me(e.id),s())}})]),n("textarea",{rows:8,placeholder:"Paste the full text.",value:e.text,oninput:r=>{ce(e.id,{text:r.target.value}),o.textContent=`${O(r.target.value)} words`,a()}}),o])}function Et(e){let t=n("input",{type:"password",autocomplete:"off",spellcheck:"false",placeholder:"sk-ant-\u2026",value:e.settings.apiKey,oninput:a=>v(o=>o.settings.apiKey=a.target.value.trim())}),s=n("button",{class:"btn btn-ghost",type:"button",text:"Show",onclick:()=>{t.type=t.type==="password"?"text":"password",s.textContent=t.type==="password"?"Show":"Hide"}});return n("div",{class:"row"},[t,s])}function Ct(){let e=n("input",{type:"file",accept:"application/json",hidden:!0});return e.addEventListener("change",async()=>{let t=e.files[0];if(t)try{Be(await t.text()),k("Backup restored."),V()}catch(s){k(s.message,"error")}}),n("section",{class:"panel"},[n("h2",{text:"Data"}),n("p",{class:"muted",text:tt}),n("div",{class:"row wrap"},[n("button",{class:"btn",text:"Export",onclick:()=>at(`voicebank-${new Date().toISOString().slice(0,10)}.json`,Re()).catch(t=>k(t.message,"error"))}),n("button",{class:"btn",text:"Import",onclick:()=>e.click()}),e])])}function te(e,t){return n("label",{class:"field"},[n("span",{class:"field-label",text:e}),t])}function Se(e,t,s){return n("select",{onchange:o=>s(o.target.value)},e.map(([o,r])=>n("option",{value:o,text:r,selected:o===t})))}var Ce={};oe(Ce,{render:()=>qt});var m={tag:null,kind:"",q:"",editing:null};function qt(e){let t=n("div",{class:"tagbar"}),s=n("div",{class:"cards"}),a=n("input",{type:"search",placeholder:"Search chunks",value:m.q,oninput:u=>{m.q=u.target.value,p()}}),o=n("select",{onchange:u=>{m.kind=u.target.value,p()}},[n("option",{value:"",text:"All kinds"}),...F.map(u=>n("option",{value:u.id,text:u.label,selected:m.kind===u.id}))]);function r(){let u=m.q.toLowerCase();return f().chunks.filter(h=>(!m.tag||h.tags.includes(m.tag))&&(!m.kind||h.kind===m.kind)&&(!u||`${h.title} ${h.text}`.toLowerCase().includes(u)))}function i(){C(t);let u=f().chunks;t.append(n("button",{class:`chip ${m.tag?"":"chip-on"}`,text:`All ${u.length}`,onclick:()=>{m.tag=null,l()}}));for(let g of f().tags){let _=u.filter(b=>b.tags.includes(g)).length,x=n("button",{class:`chip droppable ${m.tag===g?"chip-on":""}`,title:"Click to filter. Drop a card here to tag it.",onclick:()=>{m.tag=m.tag===g?null:g,l()}},[g,n("span",{class:"chip-n",text:_})]);x.addEventListener("dragover",b=>{b.preventDefault(),x.classList.add("drop-hover")}),x.addEventListener("dragleave",()=>x.classList.remove("drop-hover")),x.addEventListener("drop",b=>{b.preventDefault(),x.classList.remove("drop-hover");let A=I(b.dataTransfer.getData("text/plain"));A&&!A.tags.includes(g)&&(Q(A.id,{tags:[...A.tags,g]}),k(`Tagged \u201C${A.title||"chunk"}\u201D ${g}`),l())}),t.append(x)}let h=n("input",{type:"text",class:"tag-input",placeholder:"+ New tag"});h.addEventListener("keydown",g=>{g.key==="Enter"&&(K(h.value),i(),t.querySelector(".tag-input")?.focus())}),t.append(h),m.tag&&t.append(n("button",{class:"btn btn-ghost small",text:`Delete tag \u201C${m.tag}\u201D`,onclick:async()=>{await L(`Delete the tag \u201C${m.tag}\u201D from every chunk?`)&&(De(m.tag),m.tag=null,l())}}))}function p(){C(s);let u=r();if(!f().chunks.length){s.append(n("div",{class:"empty"},[n("p",{text:"No chunks yet. A chunk is one reusable piece of your story: a project and its result, a claim about what you bring, the way you introduce yourself."}),n("p",{text:"Write them one at a time with New chunk, or paste a r\xE9sum\xE9 or LinkedIn profile into Split with Claude and review what comes back."})]));return}u.length||s.append(n("p",{class:"empty",text:"Nothing matches this filter."})),u.forEach((h,g)=>s.append(m.editing===h.id?At(h,()=>{m.editing=null,l()}):d(h,g,u)))}function d(u,h,g){let _=F.find(b=>b.id===u.kind)?.label||u.kind,x=b=>{pe(R(g.map(A=>A.id),h,b)),p()};return n("article",{class:`card kind-${u.kind}`,draggable:"true",dataset:{id:u.id}},[n("div",{class:"card-top"},[n("span",{class:"grip","aria-hidden":"true",text:"\u22EE\u22EE"}),n("span",{class:"kind",text:_}),n("span",{class:"muted small",text:`${O(u.text)} words`})]),n("h3",{text:u.title||"Untitled"}),n("p",{class:"card-text",text:u.text}),n("div",{class:"card-tags"},u.tags.map(b=>n("span",{class:"tag"},[b,n("button",{class:"tag-x","aria-label":`Remove tag ${b}`,text:"\xD7",onclick:()=>{Q(u.id,{tags:u.tags.filter(A=>A!==b)}),l()}})]))),n("div",{class:"card-actions"},[n("button",{class:"btn btn-ghost small",text:"\u2191","aria-label":"Move up",onclick:()=>x(-1),disabled:h===0}),n("button",{class:"btn btn-ghost small",text:"\u2193","aria-label":"Move down",onclick:()=>x(1),disabled:h===g.length-1}),n("span",{class:"spacer"}),n("button",{class:"btn btn-ghost small",text:"Edit",onclick:()=>{m.editing=u.id,p()}}),n("button",{class:"btn btn-ghost small danger",text:"Delete",onclick:async()=>{await L(`Delete \u201C${u.title||"this chunk"}\u201D?`)&&(ue(u.id),l())}})])])}function l(){i(),p()}Y(s,u=>pe(u));let c=n("div");e.append(n("div",{class:"page"},[n("header",{class:"page-head"},[n("h1",{text:"Chunks"}),n("p",{text:"Write each piece of your history once. Tag it by theme, then let the assembler pick and order the right ones for each job."})]),n("div",{class:"toolbar"},[a,o,n("span",{class:"spacer"}),n("button",{class:"btn",text:"Split with Claude",onclick:()=>{C(c),c.append($t(()=>{C(c),l()}))}}),n("button",{class:"btn btn-primary",text:"New chunk",onclick:()=>{let u=le({tags:m.tag?[m.tag]:[],kind:m.kind||"experience"});m.editing=u.id,m.q="",a.value="",l(),s.querySelector(".card-edit input")?.focus()}})]),c,t,s])),l()}function At(e,t){let s=n("input",{type:"text",placeholder:"Short title, e.g. \u201CCut churn 18% at Northwind\u201D",value:e.title}),a=n("select",{},F.map(l=>n("option",{value:l.id,text:l.label,selected:e.kind===l.id}))),o=n("textarea",{rows:7,placeholder:"What happened, what you did, what changed. Concrete facts and numbers; write it the way you would say it.",value:e.text}),r=new Set(e.tags),i=n("div",{class:"tag-pick"});function p(){C(i);for(let c of f().tags)i.append(n("button",{type:"button",class:`chip ${r.has(c)?"chip-on":""}`,text:c,onclick:()=>{r.has(c)?r.delete(c):r.add(c),p()}}));let l=n("input",{type:"text",class:"tag-input",placeholder:"+ New tag"});l.addEventListener("keydown",c=>{if(c.key!=="Enter")return;c.preventDefault();let u=l.value.trim();u&&(K(u),r.add(f().tags.find(h=>h.toLowerCase()===u.toLowerCase())),p())}),i.append(l)}p();let d=()=>{Q(e.id,{title:s.value.trim(),kind:a.value,text:o.value.trim(),tags:[...r]}),t()};return n("article",{class:"card card-edit",dataset:{id:e.id}},[n("div",{class:"row"},[s,a]),o,i,n("div",{class:"card-actions"},[n("span",{class:"spacer"}),n("button",{class:"btn btn-ghost",text:"Cancel",onclick:()=>{!e.title&&!e.text&&ue(e.id),t()}}),n("button",{class:"btn btn-primary",text:"Save",onclick:d})])])}function $t(e){let t=n("textarea",{rows:10,placeholder:"Paste a r\xE9sum\xE9, LinkedIn profile, performance review or old cover letter."}),s=n("button",{class:"btn btn-primary",text:"Split into chunks"}),a=n("div",{class:"split-results"}),o=n("section",{class:"panel"},[n("div",{class:"panel-head"},[n("h2",{text:"Split with Claude"}),n("button",{class:"btn btn-ghost",text:"Close",onclick:e})]),n("p",{class:"muted",text:"Claude breaks the text into one claim per chunk, keeps your facts and adds none. Review before adding."}),t,s,a]);return s.addEventListener("click",async()=>{if(t.value.trim()){s.disabled=!0,s.textContent="Splitting\u2026",C(a);try{let{chunks:r}=await ee(Xe(t.value,f().tags),Ge),i=r.map(()=>!0);r.forEach((p,d)=>a.append(n("label",{class:"split-item"},[n("input",{type:"checkbox",checked:!0,onchange:l=>i[d]=l.target.checked}),n("div",{},[n("strong",{text:p.title}),n("span",{class:"muted small",text:` \xB7 ${p.kind} \xB7 ${p.tags.join(", ")}`}),n("p",{text:p.text})])]))),a.append(n("button",{class:"btn btn-primary",text:"Add selected",onclick:()=>{let p=r.filter((d,l)=>i[l]);for(let d of p.reverse())le(d);k(`Added ${p.length} chunks.`),e()}}))}catch(r){k(M(r),"error")}finally{s.disabled=!1,s.textContent="Split into chunks"}}}),o}var qe={};oe(qe,{render:()=>Lt});var Nt=new Set(`a an and are as at be been but by can for from has have how i in into is it its of on or our
+  that the their them they this to was we were what when which who will with you your us
+  role team work working experience ability strong skills including across within new
+  about all also any more most other over such than then these those through using
+  candidate candidates job position company ideal looking years year plus etc well
+  responsibilities requirements qualifications preferred required must able`.split(/\s+/));function ne(e){return(e||"").toLowerCase().replace(/[^a-z0-9+#.\s-]/g," ").split(/[\s/-]+/).map(t=>t.replace(/^\.+|\.+$/g,"")).filter(t=>t.length>2&&!Nt.has(t)).map(_t)}function _t(e){return e.replace(/(ing|ed|es|s|ly|ment|ments|ation|ations)$/,"")||e}function ot(e,t){let s=ne(e),a=new Map;for(let d of s)a.set(d,(a.get(d)||0)+1);let o=new Map;for(let d of t)for(let l of new Set(ne(`${d.title} ${d.text} ${d.tags.join(" ")}`)))o.set(l,(o.get(l)||0)+1);let r=new Map,i=0;for(let d of t){let l=new Set(ne(`${d.title} ${d.text}`)),c=new Set(ne(d.tags.join(" "))),u=0,h=[];for(let[g,_]of a){let x=Math.log(1+t.length/(o.get(g)||1));l.has(g)&&(u+=Math.min(_,3)*x,h.push(g)),c.has(g)&&(u+=1.5*Math.min(_,3)*x)}r.set(d.id,{s:u,hits:h}),i=Math.max(i,u)}let p=new Map;for(let[d,{s:l,hits:c}]of r)p.set(d,{score:i?Math.round(l/i*100):0,hits:c.slice(0,6)});return p}var rt=[{prompt:"Cover letter",limit:300,unit:"words"},{prompt:"Why do you want to work here?",limit:150,unit:"words"},{prompt:"Tell us about yourself.",limit:100,unit:"words"},{prompt:"Describe a difficult problem you solved and how.",limit:250,unit:"words"},{prompt:"LinkedIn note to the hiring manager",limit:300,unit:"chars"}],D=new Map;function Lt(e){let t=q();t||(t=de());let s=n("div",{class:"page"});e.append(s);function a(){C(s),t=q(),s.append(n("header",{class:"page-head"},[n("h1",{text:"Assemble"}),n("p",{text:"Paste the job description. Chunks are ranked as you type; Claude then picks the evidence, orders it and drafts each answer from the same material without repeating itself."})]),Tt(a),jt(t,a),it(t,a),Mt(t,a),Dt(t,a))}return a(),()=>{for(let o of D.values())o.abort();D=new Map}}function Tt(e){let t=f(),s=a=>[a.company,a.role].filter(Boolean).join(" \xB7 ")||"Untitled application";return n("div",{class:"toolbar"},[n("select",{"aria-label":"Application",onchange:a=>{v(o=>o.currentApp=a.target.value),e()}},t.applications.map(a=>n("option",{value:a.id,text:s(a),selected:a.id===t.currentApp}))),n("span",{class:"spacer"}),n("button",{class:"btn",text:"New application",onclick:()=>{de(),e()}}),n("button",{class:"btn btn-ghost danger",text:"Delete",onclick:async()=>{await L("Delete this application and its drafts?")&&(Oe(t.currentApp),e())}})])}function jt(e,t){let s=(i,p)=>n("input",{type:"text",placeholder:p,value:e[i],oninput:d=>N(e.id,{[i]:d.target.value})}),a=n("textarea",{rows:12,placeholder:"Paste the full job description.",value:e.jd}),o;a.addEventListener("input",()=>{N(e.id,{jd:a.value}),clearTimeout(o),o=setTimeout(()=>{document.getElementById("match-panel")?.replaceWith(it(q(),t))},400)});let r=n("button",{class:"btn btn-primary",text:e.analysis?"Re-analyze with Claude":"Analyze with Claude"});return r.addEventListener("click",async()=>{let i=f();if(!a.value.trim())return k("Paste a job description first.","error");if(!i.chunks.length)return k("Add some chunks first.","error");r.disabled=!0,r.textContent="Matching your chunks\u2026";try{let p=await ee(ze(q(),i.chunks),Ve),d=new Set(i.chunks.map(c=>c.id));p.requirements.forEach(c=>c.chunk_ids=c.chunk_ids.filter(u=>d.has(u)));let l=p.sequence.filter(c=>d.has(c.chunk_id)).map(c=>({chunkId:c.chunk_id,purpose:c.purpose}));N(e.id,{analysis:p,sequence:l}),t()}catch(p){k(M(p),"error"),r.disabled=!1,r.textContent="Analyze with Claude"}}),n("section",{class:"panel"},[n("h2",{text:"Job"}),n("div",{class:"row"},[s("company","Company"),s("role","Role title")]),a,r])}function it(e,t){let s=f(),a=n("section",{class:"panel",id:"match-panel"},[n("h2",{text:"Match"})]),o=e.analysis;if(o){let l=c=>I(c)?.title||"Untitled";a.append(n("p",{text:o.role_summary}),n("p",{class:"angle"},[n("strong",{text:"Through line: "}),o.angle]),n("ul",{class:"reqs"},o.requirements.map(c=>n("li",{class:c.chunk_ids.length?"":"req-gap"},[n("span",{class:`pri pri-${c.priority}`,text:c.priority==="must"?"Must":"Nice"}),n("span",{class:"req-text",text:c.requirement}),n("span",{class:"req-chunks"},c.chunk_ids.length?c.chunk_ids.map(u=>n("span",{class:"tag",text:l(u)})):n("span",{class:"muted small",text:"No evidence yet"}))])))),o.gaps.length&&a.append(n("div",{class:"gaps"},[n("strong",{text:"Gaps worth a new chunk"}),n("ul",{},o.gaps.map(c=>n("li",{text:c})))]))}if(!s.chunks.length)return a.append(n("p",{class:"empty"},["No chunks yet. ",n("a",{href:"#chunks",text:"Add some"})," to match against."])),a;let r=ot(e.jd,s.chunks),i=new Set(e.sequence.map(l=>l.chunkId)),p=s.chunks.slice().sort((l,c)=>(r.get(c.id)?.score||0)-(r.get(l.id)?.score||0)),d=n("ul",{class:"library"});for(let l of p){let c=r.get(l.id),u=n("li",{class:`lib-item ${i.has(l.id)?"in-seq":""}`,draggable:i.has(l.id)?"false":"true",dataset:{chunk:l.id}},[n("span",{class:"meter",title:`Keyword overlap ${c.score}%`},[n("span",{style:`width:${c.score}%`})]),n("div",{class:"lib-body"},[n("strong",{text:l.title||"Untitled"}),n("span",{class:"muted small",text:[l.tags.join(", "),c.hits.length?`matches: ${c.hits.join(", ")}`:""].filter(Boolean).join(" \xB7 ")})]),i.has(l.id)?n("span",{class:"muted small",text:"In sequence"}):n("button",{class:"btn btn-ghost small",text:"Add",onclick:()=>{N(e.id,{sequence:[...e.sequence,{chunkId:l.id,purpose:""}]}),t()}})]);u.addEventListener("dragstart",h=>{h.dataTransfer.setData("application/x-chunk",l.id),h.dataTransfer.effectAllowed="copy"}),d.append(u)}return a.append(n("h3",{text:e.jd.trim()?"Library ranked by keyword overlap":"Library"}),n("p",{class:"muted small",text:"Drag a chunk into the sequence, or press Add."}),d),a}function Mt(e,t){let s=n("ol",{class:"sequence"}),a=r=>{N(e.id,{sequence:r}),t()};e.sequence.forEach((r,i)=>{let p=I(r.chunkId);p&&s.append(n("li",{class:"seq-item",draggable:"true",dataset:{id:r.chunkId}},[n("span",{class:"grip","aria-hidden":"true",text:"\u22EE\u22EE"}),n("span",{class:"seq-n",text:i+1}),n("div",{class:"seq-body"},[n("strong",{text:p.title||"Untitled"}),n("input",{type:"text",class:"purpose",placeholder:"What this chunk does in the story",value:r.purpose,draggable:"false",oninput:d=>{let l=q().sequence.map(c=>c.chunkId===r.chunkId?{...c,purpose:d.target.value}:c);N(e.id,{sequence:l})}})]),n("div",{class:"seq-actions"},[n("button",{class:"btn btn-ghost small",text:"\u2191","aria-label":"Move up",disabled:i===0,onclick:()=>a(R(e.sequence,i,-1))}),n("button",{class:"btn btn-ghost small",text:"\u2193","aria-label":"Move down",disabled:i===e.sequence.length-1,onclick:()=>a(R(e.sequence,i,1))}),n("button",{class:"btn btn-ghost small",text:"Remove",onclick:()=>a(e.sequence.filter(d=>d.chunkId!==r.chunkId))})])]))}),Y(s,r=>{let i=new Map(q().sequence.map(p=>[p.chunkId,p]));N(e.id,{sequence:r.map(p=>i.get(p)).filter(Boolean)}),t()});let o=n("div",{class:"dropzone"},[s]);return o.addEventListener("dragover",r=>{r.dataTransfer.types.includes("application/x-chunk")&&(r.preventDefault(),o.classList.add("drop-hover"))}),o.addEventListener("dragleave",()=>o.classList.remove("drop-hover")),o.addEventListener("drop",r=>{let i=r.dataTransfer.getData("application/x-chunk");o.classList.remove("drop-hover"),!(!i||e.sequence.some(p=>p.chunkId===i))&&(r.preventDefault(),a([...e.sequence,{chunkId:i,purpose:""}]))}),e.sequence.length||o.append(n("p",{class:"empty",text:"Analyze with Claude for a suggested order, or drag chunks here."})),n("section",{class:"panel"},[n("h2",{text:"Sequence"}),n("p",{class:"muted",text:"The chunks every answer draws on, in story order. Drag to reorder."}),o])}function Dt(e,t){let s=n("div",{class:"questions"});e.questions.forEach(o=>s.append(Ot(e.id,o.id,t)));let a=n("select",{"aria-label":"Add a question",onchange:o=>{let r=o.target.value==="custom"?{prompt:"",limit:200,unit:"words"}:rt[Number(o.target.value)];r&&(N(e.id,{questions:[...q().questions,{id:T("q"),answer:"",note:"",...r}]}),t())}},[n("option",{value:"",text:"Add a question\u2026",selected:!0}),...rt.map((o,r)=>n("option",{value:r,text:`${o.prompt} (${o.limit} ${o.unit})`})),n("option",{value:"custom",text:"Custom question"})]);return n("section",{class:"panel"},[n("h2",{text:"Questions"}),n("p",{class:"muted",text:"Each answer is written from the same sequence at its own length. Drafts already written for this application are passed along so the next one takes a different angle."}),s,a])}function Ot(e,t,s){let o=q(e).questions.find(y=>y.id===t),r=y=>Ie(e,t,y),i=n("textarea",{rows:10,class:"answer",placeholder:"The draft appears here. Edit freely.",value:o.answer}),p=n("span",{class:"count"}),d=()=>{let y=q(e).questions.find(U=>U.id===t),$=Le(i.value,y.unit);p.textContent=`${$} / ${y.limit} ${y.unit}`,p.className=`count ${$>y.limit?"over":$>=y.limit*.85?"ok":""}`};i.addEventListener("input",()=>{r({answer:i.value}),d()});let l=n("input",{type:"number",min:10,step:10,value:o.limit,class:"limit","aria-label":"Length limit"});l.addEventListener("input",()=>{r({limit:Number(l.value)||0}),d()});let c=n("select",{"aria-label":"Unit"},[n("option",{value:"words",text:"words",selected:o.unit==="words"}),n("option",{value:"chars",text:"characters",selected:o.unit==="chars"})]);c.addEventListener("change",()=>{r({unit:c.value}),d()});let u=n("button",{class:"btn btn-primary",text:o.answer?"Redraft":"Draft"}),h=n("input",{type:"text",placeholder:"Revise: e.g. lead with the pricing story, less formal"}),g=n("button",{class:"btn",text:"Revise"}),_=[u,g];async function x(y){let $=q(e),U=$.questions.find(S=>S.id===t),Ne=$.sequence.map(S=>I(S.chunkId)).filter(Boolean);if(!Ne.length)return k("Put at least one chunk in the sequence first.","error");if(!U.prompt.trim())return k("Write the question first.","error");if(D.has(t)){D.get(t).abort();return}let _e=new AbortController;D.set(t,_e);let ae=i.value,ht=$.questions.filter(S=>S.id!==t&&S.answer.trim()),ft=Fe({app:$,question:U,chunks:Ne,others:ht,instruction:y,previous:y?ae:""});_.forEach(S=>S.disabled=!0),u.disabled=!1,u.textContent="Stop",i.classList.add("streaming"),p.textContent="Thinking\u2026";try{let S=await st(ft,H=>{i.value=H,d()},_e.signal);i.value=S,r({answer:S,previous:ae}),h.value=""}catch(S){let H=M(S);H==="Stopped."?r({answer:i.value}):(i.value=ae,k(H,"error"))}finally{D.delete(t),i.classList.remove("streaming"),_.forEach(S=>S.disabled=!1),u.textContent=i.value?"Redraft":"Draft",d(),A.hidden=!q(e).questions.find(S=>S.id===t).previous}}u.addEventListener("click",()=>x("")),g.addEventListener("click",()=>h.value.trim()&&x(h.value.trim())),h.addEventListener("keydown",y=>y.key==="Enter"&&g.click());let b=(y,$)=>n("button",{class:"chip",text:y,onclick:()=>!D.has(t)&&i.value&&x($)}),A=n("button",{class:"btn btn-ghost small",text:"Undo last draft",hidden:!o.previous,onclick:()=>{let y=q(e).questions.find($=>$.id===t);i.value=y.previous||"",r({answer:i.value,previous:""}),A.hidden=!0,d()}}),dt=n("article",{class:"qcard"},[n("div",{class:"q-head"},[n("textarea",{rows:2,class:"q-prompt",placeholder:"Paste the application question",value:o.prompt,oninput:y=>r({prompt:y.target.value})}),n("button",{class:"btn btn-ghost small danger",text:"Remove",onclick:async()=>{o.answer&&!await L("Remove this question and its draft?","Remove")||(N(e,{questions:q(e).questions.filter(y=>y.id!==t)}),s())}})]),n("div",{class:"row wrap q-opts"},[n("span",{class:"muted small",text:"Up to"}),l,c,n("input",{type:"text",class:"grow",placeholder:"Optional direction, e.g. focus on the B2B work",value:o.note,oninput:y=>r({note:y.target.value})}),u]),i,n("div",{class:"row wrap q-foot"},[p,A,n("span",{class:"spacer"}),n("button",{class:"btn btn-ghost small",text:"Copy",onclick:async()=>{try{await navigator.clipboard.writeText(i.value),k("Copied.")}catch{i.select()}}})]),n("div",{class:"row wrap"},[b("Tighter","Cut filler and make every sentence earn its place. Stay within the length."),b("More like me","Read the writing samples again and bring the rhythm, word choice and punctuation closer to them. Remove anything that sounds like a template."),b("More specific","Replace general claims with the concrete facts and numbers from the chunks."),b("Warmer","Slightly warmer and more personal, without flattery.")]),n("div",{class:"row"},[h,g])]);return d(),dt}var Ae={assemble:{label:"Assemble",mod:qe},chunks:{label:"Chunks",mod:Ce},voice:{label:"Voice",mod:Ee}},ct=document.getElementById("outlet"),lt=document.getElementById("nav"),se=null;function ut(){let e=location.hash.replace(/^#\/?/,"");if(Ae[e])return e;let t=f();return W&&!t.settings.apiKey||t.samples.length<B?"voice":t.chunks.length?"assemble":"chunks"}function pt(e){C(lt);let t=f(),s={voice:t.samples.filter(a=>a.text.trim()).length,chunks:t.chunks.length,assemble:null};for(let[a,o]of Object.entries(Ae))lt.append(n("a",{href:`#${a}`,class:a===e?"active":"","aria-current":a===e?"page":null},[o.label,s[a]!=null?n("span",{class:"nav-n",text:s[a]}):null]))}function $e(){se&&se(),se=null;let e=ut();pt(e),C(ct),se=Ae[e].mod.render(ct)||null,window.scrollTo(0,0)}X(()=>pt(ut()));window.addEventListener("hashchange",$e);window.addEventListener("vb:refresh",$e);$e();Ue();
+
+</script>

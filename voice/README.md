@@ -4,8 +4,16 @@ Write job applications in your own voice from reusable chunks of your
 experience, so you describe each achievement once and stop rewriting it for
 every question and word limit.
 
-Live at **https://brenlowportfolio-experiment.github.io/1/voice/** once the
-default branch carries this directory. Locally:
+Two builds from the same source:
+
+- **claude.ai Artifact** (no API key): https://claude.ai/artifact/9A2bwwBnKqwXjHmQxtmbGo
+  Claude calls run on your claude.ai account; data is saved privately to
+  that account, so it follows you across devices.
+- **GitHub Pages** (bring your own API key):
+  https://brenlowportfolio-experiment.github.io/1/voice/ once the default
+  branch carries this directory.
+
+To run the Pages build locally:
 
 ```bash
 python3 -m http.server 8000   # from the repository root
@@ -52,6 +60,18 @@ Opus and Sonnet.
 
 The key sits in `localStorage` in plain text. Use a key with a spend limit,
 and do not use this on a shared machine.
+
+## Artifact build
+
+`artifact/` swaps `src/lib/claude.js` for `claude-sample.js` (the claude.ai
+`sample` capability, plus `downloads` for export) and adds `sync.js`, which
+mirrors state into the viewer's private `db` subtree. To rebuild:
+
+```bash
+cd voice/artifact && npm install && npm run build   # writes dist/voicebank.html
+```
+
+Then republish `dist/voicebank.html` to the same artifact URL.
 
 ## Files
 

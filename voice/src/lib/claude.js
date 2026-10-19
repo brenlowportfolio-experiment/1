@@ -5,6 +5,21 @@ import Anthropic from '../../vendor/anthropic-sdk.mjs';
 import * as store from './store.js';
 import { voiceBlock } from './prompts.js';
 
+export const NEEDS_KEY = true;
+export const MODEL_SETTING = 'model';
+export const MODEL_CHOICES = store.MODELS.map((m) => [m.id, m.label]);
+export const CONNECTION_NOTE = 'Your key is stored in this browser only and sent only to api.anthropic.com.';
+export const STORAGE_NOTE =
+  'Everything is stored in this browser. Export to move it to another machine or keep a backup. Exports leave out your API key.';
+
+export async function saveFile(filename, text) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
 function client() {
   const { apiKey } = store.get().settings;
   if (!apiKey) throw new Error('Add your Anthropic API key under Voice first.');

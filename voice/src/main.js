@@ -2,6 +2,7 @@
 
 import { el, clear } from './lib/dom.js';
 import * as store from './lib/store.js';
+import { NEEDS_KEY } from './lib/claude.js';
 import * as voice from './views/voice.js';
 import * as chunks from './views/chunks.js';
 import * as assemble from './views/assemble.js';
@@ -20,7 +21,7 @@ function current() {
   const v = location.hash.replace(/^#\/?/, '');
   if (VIEWS[v]) return v;
   const st = store.get();
-  if (!st.settings.apiKey || st.samples.length < store.MIN_SAMPLES) return 'voice';
+  if ((NEEDS_KEY && !st.settings.apiKey) || st.samples.length < store.MIN_SAMPLES) return 'voice';
   return st.chunks.length ? 'assemble' : 'chunks';
 }
 
@@ -34,7 +35,7 @@ function drawNav(active) {
   };
   for (const [id, v] of Object.entries(VIEWS)) {
     nav.append(
-      el('a', { href: `#/${id}`, class: id === active ? 'active' : '', 'aria-current': id === active ? 'page' : null }, [
+      el('a', { href: `#${id}`, class: id === active ? 'active' : '', 'aria-current': id === active ? 'page' : null }, [
         v.label,
         badge[id] != null ? el('span', { class: 'nav-n', text: badge[id] }) : null,
       ]),
@@ -54,4 +55,5 @@ function route() {
 
 store.subscribe(() => drawNav(current()));
 window.addEventListener('hashchange', route);
+window.addEventListener('vb:refresh', route);
 route();

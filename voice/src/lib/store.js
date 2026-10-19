@@ -60,6 +60,7 @@ function load() {
 }
 
 function save() {
+  state.localSavedAt = Date.now();
   try {
     localStorage.setItem(KEY, JSON.stringify(state));
   } catch {
@@ -193,6 +194,12 @@ export function patchQuestion(appId, qid, patch) {
     const a = st.applications.find((x) => x.id === appId);
     Object.assign(a.questions.find((q) => q.id === qid), patch);
   });
+}
+
+/** Swap in a whole state (sync from the account copy). */
+export function replaceState(data) {
+  state = { ...blank(), ...data };
+  save();
 }
 
 // Backup

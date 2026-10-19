@@ -91,3 +91,30 @@ export function move(arr, index, delta) {
   [out[index], out[j]] = [out[j], out[index]];
   return out;
 }
+
+/**
+ * In-page confirm. window.confirm is unavailable inside claude.ai artifacts,
+ * so every destructive action asks through this instead.
+ */
+export function ask(message, okLabel = 'Delete') {
+  return new Promise((resolve) => {
+    const dlg = el('dialog', { class: 'ask' }, [
+      el('p', { text: message }),
+      el('div', { class: 'row ask-actions' }, [
+        el('button', { class: 'btn btn-ghost', value: 'cancel', text: 'Cancel', onclick: () => dlg.close('cancel') }),
+        el('button', { class: 'btn btn-danger', text: okLabel, onclick: () => dlg.close('ok') }),
+      ]),
+    ]);
+    dlg.addEventListener('close', () => {
+      resolve(dlg.returnValue === 'ok');
+      dlg.remove();
+    });
+    document.body.append(dlg);
+    dlg.showModal();
+  });
+}
+
+/** Ask the shell to re-render the current view (after import or sync). */
+export function refresh() {
+  window.dispatchEvent(new Event('vb:refresh'));
+}

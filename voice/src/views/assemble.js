@@ -1,7 +1,7 @@
 // Assemble: paste a job description, match chunks to it, order them, and
 // draft each application question in your voice at its own length.
 
-import { el, clear, measure, sortable, move, toast, uid } from '../lib/dom.js';
+import { el, clear, measure, sortable, move, toast, uid, ask } from '../lib/dom.js';
 import * as store from '../lib/store.js';
 import * as claude from '../lib/claude.js';
 import { score } from '../lib/match.js';
@@ -76,8 +76,8 @@ function appPicker(redraw) {
     el('button', {
       class: 'btn btn-ghost danger',
       text: 'Delete',
-      onclick: () => {
-        if (!confirm('Delete this application and its drafts?')) return;
+      onclick: async () => {
+        if (!(await ask('Delete this application and its drafts?'))) return;
         store.removeApp(st.currentApp);
         redraw();
       },
@@ -175,7 +175,7 @@ function matchPanel(a, redraw) {
   }
 
   if (!st.chunks.length) {
-    panel.append(el('p', { class: 'empty' }, ['No chunks yet. ', el('a', { href: '#/chunks', text: 'Add some' }), ' to match against.']));
+    panel.append(el('p', { class: 'empty' }, ['No chunks yet. ', el('a', { href: '#chunks', text: 'Add some' }), ' to match against.']));
     return panel;
   }
   const scores = score(a.jd, st.chunks);
@@ -372,6 +372,7 @@ function questionCard(appId, qid, redraw) {
     gen.disabled = false;
     gen.textContent = 'Stop';
     answer.classList.add('streaming');
+    count.textContent = 'Thinking…';
     try {
       const final = await claude.stream(
         prompt,
@@ -431,8 +432,8 @@ function questionCard(appId, qid, redraw) {
       el('button', {
         class: 'btn btn-ghost small danger',
         text: 'Remove',
-        onclick: () => {
-          if (q.answer && !confirm('Remove this question and its draft?')) return;
+        onclick: async () => {
+          if (q.answer && !(await ask('Remove this question and its draft?', 'Remove'))) return;
           store.patchApp(appId, { questions: store.app(appId).questions.filter((x) => x.id !== qid) });
           redraw();
         },

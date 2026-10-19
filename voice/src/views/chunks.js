@@ -1,7 +1,7 @@
 // Chunks: the library of reusable blocks. Cards are draggable to reorder,
 // and can be dropped on a tag to tag them.
 
-import { el, clear, countWords, sortable, move, toast } from '../lib/dom.js';
+import { el, clear, countWords, sortable, move, toast, ask } from '../lib/dom.js';
 import * as store from '../lib/store.js';
 import * as claude from '../lib/claude.js';
 import { splitPrompt, SPLIT_SCHEMA } from '../lib/prompts.js';
@@ -97,8 +97,8 @@ export function render(outlet) {
         el('button', {
           class: 'btn btn-ghost small',
           text: `Delete tag “${view.tag}”`,
-          onclick: () => {
-            if (!confirm(`Delete the tag “${view.tag}” from every chunk?`)) return;
+          onclick: async () => {
+            if (!(await ask(`Delete the tag “${view.tag}” from every chunk?`))) return;
             store.removeTag(view.tag);
             view.tag = null;
             drawAll();
@@ -180,8 +180,8 @@ export function render(outlet) {
         el('button', {
           class: 'btn btn-ghost small danger',
           text: 'Delete',
-          onclick: () => {
-            if (!confirm(`Delete “${c.title || 'this chunk'}”?`)) return;
+          onclick: async () => {
+            if (!(await ask(`Delete “${c.title || 'this chunk'}”?`))) return;
             store.removeChunk(c.id);
             drawAll();
           },
