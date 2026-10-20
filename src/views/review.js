@@ -4,6 +4,7 @@ import { el, clear, ruby, append } from '../lib/dom.js';
 import * as store from '../lib/store.js';
 import { GRADE, isDue, schedule, previewIntervals, shuffle, daysUntil } from '../lib/srs.js';
 import { getDoc } from '../data/contexts/index.js';
+import { speakerButton, stop as stopSpeech } from '../lib/speak.js';
 
 export function buildQueue() {
   const s = store.getSettings();
@@ -98,6 +99,7 @@ export function render(root, { navigate }) {
   }
 
   function grade(card, g) {
+    stopSpeech();
     const nextSrs = schedule(card.srs, g, new Date(), store.getSettings().maxInterval);
     store.recordReview(card.id, nextSrs);
     done++;
@@ -132,14 +134,25 @@ export function render(root, { navigate }) {
     // The pinyin is always rendered and hidden with CSS rather than being
     // conditionally built. Toggling mid-card therefore costs no re-render, so
     // it can't reset the reveal state or lose your place in the queue.
+    // Two speakers, and CSS shows one. With pinyin on, the sound sits on the
+    // front beside it. With pinyin off you are practising recognition, and
+    // hearing the word before answering would hand you the reading — so the
+    // sound moves to the answer side along with the pinyin.
+    const say = () => speakerButton(() => card.term, {
+      el,
+      rate: () => store.getSettings().speechRate || 0.85,
+      label: `Hear ${card.term}`,
+    });
+
     const front = el('div', { class: 'card-face' }, [
       ruby(card.term, card.pinyin, { size: 'xl' }),
+      el('div', { class: 'face-speak' }, [say()]),
     ]);
 
     const back = el('div', { class: 'card-back', hidden: 'hidden' });
     append(
       back,
-      el('div', { class: 'answer-pinyin', text: card.pinyin }),
+      el('div', { class: 'answer-pinyin' }, [card.pinyin, say()]),
       el('div', { class: 'answer-meaning', text: card.meaning || '—' }),
       card.note && el('div', { class: 'answer-note', text: card.note }),
     );
@@ -241,6 +254,11 @@ export function render(root, { navigate }) {
         if (ctxBtn) ctxWrap.hidden = !ctxWrap.hidden;
       } else if (ev.key.toLowerCase() === 'p') {
         togglePinyin();
+      } else if (ev.key.toLowerCase() === 's') {
+        // Whichever speaker the current mode is showing — so in pinyin-off
+        // mode, 's' does nothing until the answer is revealed.
+        const visible = [...cardEl.querySelectorAll('.speak-btn')].find((b) => b.offsetParent);
+        visible?.click();
       }
     };
   }
@@ -251,7 +269,10 @@ export function render(root, { navigate }) {
 
   next();
 
-  return () => document.removeEventListener('keydown', onKey);
+  return () => {
+    document.removeEventListener('keydown', onKey);
+    stopSpeech();
+  };
 }
 
 function stateLabel(srs) {

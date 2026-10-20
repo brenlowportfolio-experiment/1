@@ -56,6 +56,27 @@ deliberate exception**, for the reasons set out under *Importing* below. See
 documents themselves are unannotated — clean Chinese, as you'd meet it — so
 the gloss appears only when you ask for it.
 
+**Hearing it.** A 🔊 button sits beside the pinyin wherever pinyin appears: the
+hover tooltip, the popup when you click or drag a phrase, the review card, each
+deck row, and the add-a-phrase form. It speaks the *characters*, not the
+pinyin, so the voice applies real tones and tone sandhi — 你好 comes out ní hǎo
+— and a phrase like 陈述与保证 is said as one run rather than syllable by
+syllable. On a phone, where there's no hover, tap the word and use the button in
+the popup. In review, `s` plays it.
+
+The voice is the device's own (the browser's speech synthesis), so nothing is
+downloaded and it works offline — but it varies between devices. iPhone, iPad
+and Mac include a good Mandarin voice; Android and Chrome generally do; Windows
+may need Chinese (Simplified) added under *Settings → Time & language →
+Language & region*. Without one, the buttons are hidden rather than left
+dead, and Deck → Settings says why. Settings also has a speed control,
+defaulting to a slightly slow "Learner" pace that makes tones easier to hear.
+
+In review, the speaker follows the pinyin. With pinyin on it's on the front;
+with pinyin off you're practising recognition, and hearing the word first would
+give away the reading, so it moves to the answer side and only appears once
+you've answered.
+
 **Making cards.** Click a word, or drag across several words, to take a
 selection. The popup pre-fills pinyin and a meaning; edit it and add it. Words
 already in your deck get a green underline in the text, so a re-read shows you
@@ -139,7 +160,7 @@ now on. *Again* resets the interval **and** requeues the card later in the same
 session, so a word you blanked on gets tested twice before you leave.
 
 Keyboard: `space` reveals then grades *Good*; `1`–`4` grade directly; `c`
-toggles context; `p` toggles pinyin.
+toggles context; `p` toggles pinyin; `s` plays the pronunciation.
 
 ## Importing a real document
 
@@ -251,6 +272,7 @@ src/
     discover.js       novel-term discovery, verbatim-overlap guard
     normalize.js      repairs Kangxi radicals and other PDF-extraction damage
     translate.js      automatic English: curated -> CC-CEDICT -> composed
+    speak.js          pronunciation via the device's speech synthesis
     sectionize.js     cuts a long statute into study-sized sections; classifier
     pdftext.js        PDF text extraction (loads pdf.js on demand)
     srs.js            SM-2 scheduling (pure functions)

@@ -6,6 +6,7 @@ import { isDue, daysUntil, dayKey } from '../lib/srs.js';
 import { CONTEXTS, getDoc } from '../data/contexts/index.js';
 import { toast } from './reader.js';
 import { addCardPanel } from './addcard.js';
+import { speakerButton, available as speechAvailable, voiceName, onVoicesChanged, speak } from '../lib/speak.js';
 
 export function render(root, { navigate, search: initialQuery }) {
   clear(root);
@@ -122,7 +123,14 @@ export function render(root, { navigate, search: initialQuery }) {
     });
 
     node.append(
-      el('div', { class: 'row-term' }, [ruby(c.term, c.pinyin)]),
+      el('div', { class: 'row-term' }, [
+        ruby(c.term, c.pinyin),
+        speakerButton(() => c.term, {
+          el,
+          rate: () => store.getSettings().speechRate || 0.85,
+          label: `Hear ${c.term}`,
+        }),
+      ]),
       el('div', { class: 'row-body' }, [
         meaningInput,
         el(
@@ -223,6 +231,22 @@ function settingsPanel(onChange) {
         type: 'number', min: '5', max: '300', value: String(s.reviewLimit),
         onchange: (e) => store.updateSettings({ reviewLimit: Math.max(5, +e.target.value || 5) }),
       })),
+    field('Pronunciation speed',
+      el('select', {
+        onchange: (e) => {
+          store.updateSettings({ speechRate: +e.target.value });
+          speak('当事人', { rate: +e.target.value });
+        },
+      }, [
+        ['0.65', 'Slow'],
+        ['0.85', 'Learner'],
+        ['1', 'Natural'],
+      ].map(([v, t]) => el('option', {
+        value: v,
+        text: t,
+        selected: Math.abs((s.speechRate || 0.85) - +v) < 0.01,
+      })))),
+    voiceStatus(),
     field('Pinyin above characters on the front',
       el('input', {
         type: 'checkbox', checked: s.showPinyinOnFront,
@@ -282,6 +306,25 @@ function settingsPanel(onChange) {
   );
   wrap.append(body);
   return wrap;
+}
+
+/**
+ * Which voice is speaking, or why nothing is. The voice is the device's own,
+ * so the honest place to say "your Windows machine needs a language pack" is
+ * right next to the setting that would otherwise silently do nothing.
+ */
+function voiceStatus() {
+  const line = el('p', { class: 'hint voice-status' });
+  const paint = () => {
+    line.textContent = speechAvailable()
+      ? `Voice: ${voiceName()}. The voice is your device's own, so it differs between a phone and a laptop.`
+      : 'No Mandarin voice on this device, so the 🔊 buttons are hidden. iPhone, iPad, Mac and Android include one; on Windows, add Chinese (Simplified) under Settings → Time & language → Language & region, then reload.';
+  };
+  paint();
+  // The panel is rebuilt on every visit to Deck; drop the subscription once
+  // this copy of the line has left the page.
+  const off = onVoicesChanged(() => (line.isConnected ? paint() : off()));
+  return line;
 }
 
 function field(label, input) {

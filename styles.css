@@ -610,3 +610,44 @@ h2 { font-size: 19px; margin: 0; }
   .addcard-body { padding: 16px; }
   .ac-row { flex-direction: column; gap: 10px; }
 }
+
+/* ── pronunciation ──────────────────────────────────────────────────── */
+/* No Mandarin voice on this device: hide every speaker at once. */
+html.no-speech .speak-btn { display: none !important; }
+
+.speak-btn {
+  display: inline-grid; place-items: center; flex: none;
+  width: 30px; height: 30px; padding: 0; border-radius: 50%;
+  border: 1px solid var(--line-2); background: var(--card); color: var(--ink-2);
+  font-size: 14px; line-height: 1; cursor: pointer;
+  transition: border-color .15s ease, background .15s ease, transform .08s ease;
+}
+.speak-btn:hover { border-color: var(--accent); background: var(--accent-soft); }
+.speak-btn:active { transform: scale(.94); }
+.speak-btn.playing {
+  border-color: var(--accent); background: var(--accent-soft);
+  animation: speak-pulse 1s ease-in-out infinite;
+}
+@keyframes speak-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 35%, transparent); }
+  50% { box-shadow: 0 0 0 6px color-mix(in srgb, var(--accent) 0%, transparent); }
+}
+
+/* The tooltip has a button in it now, so it must take the pointer. */
+.tooltip { pointer-events: auto; }
+.tt-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.tt-top .speak-btn { width: 26px; height: 26px; font-size: 12px; }
+
+.sp-term { display: flex; align-items: flex-end; gap: 12px; }
+.sp-term .speak-btn { margin-bottom: 2px; }
+
+/* Review: the speaker follows the pinyin (see review.js). */
+.face-speak { margin-top: 14px; display: flex; justify-content: center; }
+.card.hide-pinyin .face-speak { display: none; }
+.answer-pinyin { display: flex; align-items: center; justify-content: center; gap: 10px; }
+.answer-pinyin .speak-btn { width: 26px; height: 26px; font-size: 12px; }
+
+.row-term { display: flex; align-items: flex-end; gap: 8px; }
+.row-term .speak-btn { width: 24px; height: 24px; font-size: 11px; margin-bottom: 3px; }
+.ac-preview { display: flex; align-items: flex-end; gap: 10px; }
+.voice-status { margin: -4px 0 0; }

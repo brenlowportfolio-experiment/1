@@ -15,6 +15,7 @@ const DEFAULTS = {
     maxInterval: DEFAULT_MAX, // days — the furthest ahead a card can be pushed
     showPinyinOnFront: true, // pinyin sits above the characters, as ruby text
     reviewLimit: 60,
+    speechRate: 0.85, // a touch under natural speed: easier to hear the tones
   },
   history: {}, // dayKey -> count reviewed
 };

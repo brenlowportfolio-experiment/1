@@ -6,13 +6,37 @@ import { segment, sentenceAround } from '../lib/segment.js';
 import { glossPhrase, loadGlossary, glossaryReady, SOURCE_LABEL } from '../lib/translate.js';
 import { getDoc } from '../data/contexts/index.js';
 import * as store from '../lib/store.js';
+import { speakerButton } from '../lib/speak.js';
 
 let tooltip;
 let popup;
 
+// The tooltip used to be pointer-events:none and vanished the instant the
+// mouse left the word, which was fine while it only displayed things. With a
+// speaker button in it, it has to survive the short trip from the word up to
+// the button — so hiding waits a moment, and hovering the tooltip cancels it.
+let hideTimer = null;
+
+function scheduleHide() {
+  clearTimeout(hideTimer);
+  hideTimer = setTimeout(() => {
+    if (tooltip) tooltip.hidden = true;
+  }, 280);
+}
+
+function cancelHide() {
+  clearTimeout(hideTimer);
+}
+
+function speechRate() {
+  return store.getSettings().speechRate || 0.85;
+}
+
 function ensureFloaters() {
   if (!tooltip) {
     tooltip = el('div', { class: 'tooltip', hidden: 'hidden' });
+    tooltip.addEventListener('mouseenter', cancelHide);
+    tooltip.addEventListener('mouseleave', scheduleHide);
     document.body.append(tooltip);
   }
   if (!popup) {
@@ -22,6 +46,7 @@ function ensureFloaters() {
 }
 
 function hideTooltip() {
+  clearTimeout(hideTimer);
   if (tooltip) tooltip.hidden = true;
 }
 
@@ -181,7 +206,10 @@ export function render(root, { docId, focus } = {}) {
     clear(popup);
     append(
       popup,
-      el('div', { class: 'sp-term' }, [ruby(sel.text, info.pinyin)]),
+      el('div', { class: 'sp-term' }, [
+        ruby(sel.text, info.pinyin),
+        speakerButton(() => sel.text, { el, rate: speechRate, label: `Hear ${sel.text}` }),
+      ]),
       el('input', {
         class: 'sp-meaning',
         type: 'text',
@@ -256,15 +284,25 @@ export function render(root, { docId, focus } = {}) {
   }
 
   // ── events ───────────────────────────────────────────────────────────
+  let shownFor = null;
+
   body.addEventListener('mouseover', (ev) => {
     if (dragging || !popup.hidden) return;
     const t = tokenAt(ev);
-    if (!t) return hideTooltip();
+    if (!t) return scheduleHide();
     const tok = paraTokens[t.p][t.i];
-    if (!tok.entry) return hideTooltip();
+    if (!tok.entry) return scheduleHide();
+    cancelHide();
+    // Re-rendering on every mouseover of the same word would rebuild the
+    // button under the cursor and swallow the click.
+    if (shownFor === t.node && !tooltip.hidden) return;
+    shownFor = t.node;
     clear(tooltip);
     tooltip.append(
-      el('div', { class: 'tt-pinyin', text: tok.entry.pinyin }),
+      el('div', { class: 'tt-top' }, [
+        el('div', { class: 'tt-pinyin', text: tok.entry.pinyin }),
+        speakerButton(() => tok.text, { el, rate: speechRate, label: `Hear ${tok.text}` }),
+      ]),
       el('div', { class: 'tt-word', text: tok.text }),
       el('div', { class: 'tt-meaning', text: tok.entry.meaning }),
       el('span', { class: `tag tag-${tok.entry.tag}`, text: tok.entry.tag }),
@@ -272,7 +310,7 @@ export function render(root, { docId, focus } = {}) {
     place(tooltip, t.node.getBoundingClientRect());
   });
 
-  body.addEventListener('mouseleave', hideTooltip);
+  body.addEventListener('mouseleave', scheduleHide);
 
   body.addEventListener('mousedown', (ev) => {
     const t = tokenAt(ev);

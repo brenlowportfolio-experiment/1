@@ -15,6 +15,7 @@ import { normalizeText } from '../lib/normalize.js';
 import * as store from '../lib/store.js';
 import { CONTEXTS } from '../data/contexts/index.js';
 import { toast } from './reader.js';
+import { speakerButton } from '../lib/speak.js';
 
 export function addCardPanel({ onAdded, navigate }) {
   const wrap = el('section', { class: 'addcard' });
@@ -136,7 +137,16 @@ export function addCardPanel({ onAdded, navigate }) {
     if (!meaningTouched) meaning.value = info.meaning || '';
     clear(preview);
     const t = normalizeText(term.value).trim();
-    if (t) preview.append(ruby(t, pinyin.value));
+    if (t) {
+      preview.append(
+        ruby(t, pinyin.value),
+        speakerButton(() => normalizeText(term.value).trim(), {
+          el,
+          rate: () => store.getSettings().speechRate || 0.85,
+          label: `Hear ${t}`,
+        }),
+      );
+    }
     const words = (info.units || []).filter((u) => /[一-鿿]/.test(u));
     note.textContent =
       words.length > 1
