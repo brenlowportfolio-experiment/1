@@ -68,8 +68,11 @@ The voice is the device's own (the browser's speech synthesis), so nothing is
 downloaded and it works offline — but it varies between devices. iPhone, iPad
 and Mac include a good Mandarin voice; Android and Chrome generally do; Windows
 may need Chinese (Simplified) added under *Settings → Time & language →
-Language & region*. Without one, the buttons are hidden rather than left
-dead, and Deck → Settings says why. Settings also has a speed control,
+Language & region*. The 🔊 buttons appear wherever the browser has a speech
+engine at all, and try even when the browser hasn't named a Mandarin voice —
+Safari often never lists its voices, yet speaks Mandarin fine when asked. If
+nothing can be played, a note explains how to add a voice on that device.
+**Deck → Settings → Test sound** checks your device in one press. Settings also has a speed control,
 defaulting to a slightly slow "Learner" pace that makes tones easier to hear.
 
 In review, the speaker follows the pinyin. With pinyin on it's on the front;

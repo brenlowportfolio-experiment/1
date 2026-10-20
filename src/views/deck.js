@@ -6,7 +6,7 @@ import { isDue, daysUntil, dayKey } from '../lib/srs.js';
 import { CONTEXTS, getDoc } from '../data/contexts/index.js';
 import { toast } from './reader.js';
 import { addCardPanel } from './addcard.js';
-import { speakerButton, available as speechAvailable, voiceName, onVoicesChanged, speak } from '../lib/speak.js';
+import { speakerButton, available as speechAvailable, voiceName, onVoicesChanged, speak, explainSilence } from '../lib/speak.js';
 
 export function render(root, { navigate, search: initialQuery }) {
   clear(root);
@@ -309,22 +309,50 @@ function settingsPanel(onChange) {
 }
 
 /**
- * Which voice is speaking, or why nothing is. The voice is the device's own,
- * so the honest place to say "your Windows machine needs a language pack" is
- * right next to the setting that would otherwise silently do nothing.
+ * Which voice will speak, plus a button to prove it. The voice is the device's
+ * own, so this is the one place a user can find out whether their machine can
+ * do it — and "press this and listen" settles it faster than any explanation.
  */
 function voiceStatus() {
-  const line = el('p', { class: 'hint voice-status' });
+  const wrap = el('div', { class: 'voice-status' });
+  const line = el('p', { class: 'hint' });
+  const test = el('button', {
+    class: 'btn ghost small',
+    type: 'button',
+    text: '🔊 Test sound',
+    onclick: () => {
+      test.disabled = true;
+      speak('您好，合同已经生效。', {
+        rate: store.getSettings().speechRate || 0.85,
+        onend: () => {
+          test.disabled = false;
+        },
+        onfail: (reason) => {
+          test.disabled = false;
+          explainSilence(reason);
+        },
+      });
+    },
+  });
+
   const paint = () => {
-    line.textContent = speechAvailable()
-      ? `Voice: ${voiceName()}. The voice is your device's own, so it differs between a phone and a laptop.`
-      : 'No Mandarin voice on this device, so the 🔊 buttons are hidden. iPhone, iPad, Mac and Android include one; on Windows, add Chinese (Simplified) under Settings → Time & language → Language & region, then reload.';
+    if (!speechAvailable()) {
+      line.textContent = 'This browser has no speech support, so pronunciation is unavailable here.';
+      test.hidden = true;
+      return;
+    }
+    test.hidden = false;
+    const v = voiceName();
+    line.textContent = v
+      ? `Voice: ${v}. It is your device's own, so a phone and a laptop will sound different.`
+      : 'Your browser has not named a Mandarin voice, but many still have one — press Test sound. If you hear nothing, it will tell you how to add one.';
   };
   paint();
+  wrap.append(line, test);
   // The panel is rebuilt on every visit to Deck; drop the subscription once
   // this copy of the line has left the page.
-  const off = onVoicesChanged(() => (line.isConnected ? paint() : off()));
-  return line;
+  const off = onVoicesChanged(() => (wrap.isConnected ? paint() : off()));
+  return wrap;
 }
 
 function field(label, input) {

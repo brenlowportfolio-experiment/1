@@ -651,3 +651,19 @@ html.no-speech .speak-btn { display: none !important; }
 .row-term .speak-btn { width: 24px; height: 24px; font-size: 11px; margin-bottom: 3px; }
 .ac-preview { display: flex; align-items: flex-end; gap: 10px; }
 .voice-status { margin: -4px 0 0; }
+
+/* Help when pronunciation can't be played. Larger and longer-lived than a
+   toast: it carries instructions someone may need to act on. */
+.speech-notice {
+  position: fixed; left: 50%; bottom: 24px; z-index: 90;
+  width: min(520px, calc(100vw - 32px));
+  transform: translate(-50%, 16px); opacity: 0; pointer-events: none;
+  padding: 14px 16px; border-radius: 10px;
+  background: var(--ink); color: var(--paper);
+  font-size: 13.5px; line-height: 1.55; box-shadow: var(--shadow);
+  transition: opacity .2s ease, transform .2s ease; cursor: pointer;
+}
+.speech-notice.show { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
+.speech-notice b { display: block; margin-bottom: 4px; }
+.voice-status { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: -4px 0 0; }
+.voice-status .hint { margin: 0; flex: 1 1 260px; }
