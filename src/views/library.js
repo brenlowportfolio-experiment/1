@@ -1,7 +1,7 @@
 // Library — browse contexts and the hypotheticals inside them.
 
 import { el, clear } from '../lib/dom.js';
-import { contextsWithDocs, storyFor } from '../data/contexts/index.js';
+import { contextsWithDocs, storyFor, STORIES, getDoc } from '../data/contexts/index.js';
 import * as store from '../lib/store.js';
 
 export function render(root, { navigate }) {
@@ -38,9 +38,51 @@ export function render(root, { navigate }) {
       ]),
     );
 
+    // Scenes read in order, so a context made of stories is laid out story by
+    // story; anything not in a story follows in a grid of its own.
+    const groups = storyGroups(ctx.docs);
+    for (const g of groups) {
+      if (g.story) {
+        section.append(
+          el('div', { class: 'story-head' }, [
+            el('h3', {}, [g.story.titleZh, el('span', { class: 'ctx-en', text: g.story.title })]),
+            el('p', { class: 'story-blurb', text: g.story.blurb }),
+            storyRoute(g.story),
+          ]),
+        );
+      }
+      section.append(docGrid(g.docs));
+    }
+    root.append(section);
+  }
+
+  /** The whole story in order — scenes and the documents between them. */
+  function storyRoute(story) {
+    const route = el('ol', { class: 'story-route' });
+    story.parts.forEach((id) => {
+      const d = getDoc(id);
+      if (!d) return;
+      route.append(
+        el('li', {}, [
+          el('button', {
+            class: `route-step${d.dialogue ? '' : ' is-doc'}`,
+            title: d.title,
+            onclick: () => navigate({ view: 'reader', docId: d.id }),
+          }, [
+            el('span', { class: 'zh', text: d.titleZh }),
+            !d.dialogue && el('span', { class: 'route-ctx', text: d.contextName }),
+          ]),
+        ]),
+      );
+    });
+    return route;
+  }
+
+  function docGrid(docs) {
     const list = el('div', { class: 'doc-grid' });
-    for (const d of ctx.docs) {
+    for (const d of docs) {
       const n = perDoc.get(d.id) || 0;
+      const moments = d.moments?.length || 0;
       list.append(
         el(
           'button',
@@ -57,25 +99,53 @@ export function render(root, { navigate }) {
             el('span', { class: 'doc-card-zh', text: d.titleZh }),
             el('span', { class: 'doc-card-en', text: d.title }),
             el('span', { class: 'doc-card-sum', text: d.summary }),
-            el('span', {
-              class: `doc-card-count${n ? ' has' : ''}`,
-              text: n ? `${n} card${n === 1 ? '' : 's'} from this text` : 'No cards yet',
-            }),
+            el('span', { class: 'doc-card-foot' }, [
+              el('span', {
+                class: `doc-card-count${n ? ' has' : ''}`,
+                text: n ? `${n} card${n === 1 ? '' : 's'} from this text` : 'No cards yet',
+              }),
+              moments > 0 &&
+                el('span', {
+                  class: 'moment-count',
+                  title: `${moments} key moments to practise: “what would you say?”`,
+                  text: `💬 ${moments}`,
+                }),
+            ]),
           ],
         ),
       );
     }
-    section.append(list);
-    root.append(section);
+    return list;
   }
 
   root.append(
     el('p', {
       class: 'corpus-note',
       text:
-        'Emails, contracts, judgments and the hearing scenes here are hypothetical — written to mirror the language of real PRC practice without reproducing any actual document or proceeding. Statutes are the exception: enacted text carries no copyright and its exact wording is the thing being learned, so it is quoted as written.',
+        'Emails, contracts, judgments and the scenes here are hypothetical — written to mirror the language of real PRC practice without reproducing any actual document or proceeding. Statutes are the exception: enacted text carries no copyright and its exact wording is the thing being learned, so it is quoted as written.',
     }),
   );
+}
+
+/**
+ * Split a context's scenes into stories (in story order) and the rest. A
+ * context with no scenes comes back as one plain group.
+ */
+function storyGroups(docs) {
+  const byId = new Map(docs.map((d) => [d.id, d]));
+  const used = new Set();
+  const groups = [];
+  for (const story of STORIES) {
+    // Only scenes are grouped: a story's emails or judgment stay filed in
+    // their own context, and the story heading's route links out to them.
+    const mine = story.parts.map((id) => byId.get(id)).filter((d) => d?.dialogue);
+    if (!mine.length) continue;
+    mine.forEach((d) => used.add(d.id));
+    groups.push({ story, docs: mine });
+  }
+  const rest = docs.filter((d) => !used.has(d.id));
+  if (rest.length || !groups.length) groups.push({ story: null, docs: rest });
+  return groups;
 }
 
 /** "宏图诉瑞泽 · 2/5" on documents that belong to a story — including the

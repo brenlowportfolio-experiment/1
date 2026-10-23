@@ -5,7 +5,7 @@
 // exactly as they do for every other document — and is only *rendered*
 // differently, as a speaker label rather than as words to gloss.
 //
-// Two ways to use a scene beyond reading it:
+// Three ways to use a scene beyond reading it:
 //
 //   Play scene   — the whole exchange read aloud, each speaker in their own
 //                  voice where the device has several, or their own pitch
@@ -16,31 +16,34 @@
 //                  line, then reveal it and hear the model version straight
 //                  after your own. That gap — producing it, then hearing it
 //                  right — is what reading alone never trains.
+//
+//   Key moments  — the turns that decide the exchange (an objection, a
+//                  concession, a witness pinned down) are hidden behind a
+//                  brief: what just happened, what you need to achieve. Say
+//                  what you would say, then compare. Any moment can become a
+//                  review card, so the scene comes back on schedule.
 
 import { el, clear } from '../lib/dom.js';
 import { speak, stop as stopSpeech, mandarinVoices, available, explainSilence } from '../lib/speak.js';
 import * as store from '../lib/store.js';
-
-const SIDE_LABEL = { claimant: 'Claimant side', respondent: 'Respondent side', neutral: 'Neutral' };
+import { parseTurn, momentsOf } from '../lib/turns.js';
+import { addMoment, momentKey } from './saycard.js';
+import { toast } from './reader.js';
 
 // Distinct enough to tell apart on a single voice, close enough to stay natural.
 const PITCHES = [1.0, 0.82, 1.18, 0.92, 1.1, 0.88];
 
-// A role chosen in one scene carries into the next, so a whole story can be
-// practised as 张律师 without re-choosing at every scene.
+// The mode value for key-moment practice. Speaker names are Chinese, so a
+// leading @ can never collide with one.
+const MOMENTS = '@moments';
+
+// A mode chosen in one scene carries into the next, so a whole story can be
+// practised as 张律师, or by its key moments, without re-choosing each time.
 let lastRole = '';
 
-/**
- * @returns {{speaker?, side?, en?, prefixEnd?, stage?}} for one paragraph
- */
-export function parseTurn(text, speakers) {
-  const m = text.match(/^([^：:（(\s]{1,8})[：:]/);
-  if (m && speakers[m[1]]) {
-    const sp = speakers[m[1]];
-    return { speaker: m[1], side: sp.side || 'neutral', en: sp.en || '', prefixEnd: m[0].length };
-  }
-  if (/^（.*）$/.test(text.trim())) return { stage: true };
-  return {};
+/** "Zhang Xiaoyun — partner at Hengda…" → "Zhang Xiaoyun", for a short menu. */
+function shortName(en = '') {
+  return en.split(/\s+—\s+|,/)[0].trim();
 }
 
 /** The label shown in place of the 说话人： prefix. */
@@ -65,20 +68,22 @@ export function speakerLabel(turn, onPlay) {
 }
 
 /**
- * Mount the scene bar and wire the player and role practice to the rendered
- * body. Returns a teardown.
+ * Mount the scene bar and wire the player, role practice and key moments to
+ * the rendered body. Returns a teardown.
  */
 export function mountScript({ doc, bar, body }) {
   const speakers = doc.speakers || {};
   const turns = doc.paragraphs
     .map((text, p) => ({ p, text, ...parseTurn(text, speakers) }))
     .filter((t) => t.speaker);
+  const moments = momentsOf(doc);
 
   // Speakers in order of first appearance — that order decides voices and
   // pitches, so the first voice to speak always gets the best voice.
   const cast = [...new Set(turns.map((t) => t.speaker))];
 
-  let role = cast.includes(lastRole) ? lastRole : '';
+  const valid = (r) => (r === MOMENTS ? moments.size > 0 : cast.includes(r));
+  let role = valid(lastRole) ? lastRole : '';
   let playing = false;
   let index = 0;
   let waiting = null;
@@ -87,6 +92,10 @@ export function mountScript({ doc, bar, body }) {
   const rate = () => store.getSettings().speechRate || 0.85;
   const paraOf = (p) => body.querySelector(`.para[data-p="${p}"]`);
   const lineOf = (t) => t.text.slice(t.prefixEnd);
+  const inDeck = (p) => !!store.findMomentCard(momentKey(doc.id, p));
+
+  /** Is this a turn the learner speaks, in the current mode? */
+  const isMine = (t) => (role === MOMENTS ? moments.has(t.p) : !!role && t.speaker === role);
 
   function voiceFor(speaker) {
     const voices = mandarinVoices();
@@ -98,23 +107,82 @@ export function mountScript({ doc, bar, body }) {
     };
   }
 
-  // ── role practice ────────────────────────────────────────────────────────
+  // ── key moments on the page ─────────────────────────────────────────────
+  // Each moment turn carries its brief (shown while the line is hidden), its
+  // English (shown once you've tried it) and a button to make it a card.
+  function decorateMoments() {
+    for (const [p, m] of moments) {
+      const para = paraOf(p);
+      if (!para) continue;
+      para.classList.add('has-moment');
+      para.append(
+        el('div', { class: 'moment-cue' }, [
+          el('span', { class: 'moment-tag', text: 'What would you say?' }),
+          el('span', { class: 'moment-cue-text', text: m.cue }),
+          el('span', { class: 'moment-tap', text: 'Say it, then tap to compare' }),
+        ]),
+        el('div', { class: 'moment-en', text: m.en }),
+      );
+      para.querySelector('.speaker')?.append(
+        el('button', {
+          class: 'moment-add',
+          type: 'button',
+          onmousedown: (e) => e.stopPropagation(),
+          onclick: (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const { created } = addMoment(doc, m);
+            toast(created ? 'Added to review as a “what would you say?” card' : 'Already in your deck');
+            paintAdd(p);
+            paintBar();
+          },
+        }),
+      );
+      paintAdd(p);
+    }
+  }
+
+  function paintAdd(p) {
+    const btn = paraOf(p)?.querySelector('.moment-add');
+    if (!btn) return;
+    const has = inDeck(p);
+    btn.classList.toggle('added', has);
+    btn.textContent = has ? '✓ card' : '＋ card';
+    btn.title = has
+      ? 'This moment is in your review deck'
+      : 'Add this moment to review: you’ll be given the situation and have to say the line';
+  }
+
+  function addAll() {
+    let n = 0;
+    for (const m of moments.values()) if (addMoment(doc, m).created) n++;
+    for (const p of moments.keys()) paintAdd(p);
+    toast(n ? `Added ${n} card${n === 1 ? '' : 's'} to review` : 'This scene’s moments are already in your deck');
+    paintBar();
+  }
+
+  // ── hiding and revealing ────────────────────────────────────────────────
   function applyRole() {
     for (const t of turns) {
       const para = paraOf(t.p);
       if (!para) continue;
-      const mine = role && t.speaker === role;
-      para.classList.toggle('mine', !!mine);
-      para.classList.toggle('masked', !!mine);
+      const mine = isMine(t);
+      para.classList.toggle('mine', mine);
+      para.classList.toggle('masked', mine);
+      para.classList.remove('moment-open');
     }
     paintBar();
   }
 
   function reveal(p) {
-    paraOf(p)?.classList.remove('masked');
+    const para = paraOf(p);
+    if (!para) return;
+    // A moment you've just attempted gets its English too, to check the sense.
+    if (para.classList.contains('masked') && moments.has(p)) para.classList.add('moment-open');
+    para.classList.remove('masked');
   }
 
-  // ── playback ─────────────────────────────────────────────────────────────
+  // ── playback ────────────────────────────────────────────────────────────
   function setCurrent(p) {
     body.querySelectorAll('.para.current').forEach((n) => n.classList.remove('current'));
     if (p == null) return;
@@ -143,8 +211,8 @@ export function mountScript({ doc, bar, body }) {
     const t = turns[index];
     setCurrent(t.p);
 
-    if (role && t.speaker === role) {
-      // Your turn: stop and wait. Nothing is spoken until you've had a go.
+    // Your turn — unless you've already revealed it while reading ahead.
+    if (isMine(t) && paraOf(t.p)?.classList.contains('masked')) {
       waiting = t;
       paintBar();
       return;
@@ -210,9 +278,12 @@ export function mountScript({ doc, bar, body }) {
     sayTurn(t, () => setCurrent(null));
   }
 
-  // ── the bar ──────────────────────────────────────────────────────────────
+  // ── the bar ─────────────────────────────────────────────────────────────
   function paintBar() {
     clear(bar);
+    // On a phone the bar only pins itself to the screen while a scene runs —
+    // otherwise it would sit over half the script you are trying to read.
+    bar.classList.toggle('live', playing);
 
     const playBtn = el('button', {
       class: `btn ${playing ? 'ghost' : 'primary'} small scene-play`,
@@ -225,7 +296,7 @@ export function mountScript({ doc, bar, body }) {
       'select',
       {
         class: 'scene-role',
-        'aria-label': 'Practise a role',
+        'aria-label': 'What to practise',
         onchange: (e) => {
           role = e.target.value;
           lastRole = role;
@@ -235,16 +306,24 @@ export function mountScript({ doc, bar, body }) {
         },
       },
       [
-        el('option', { value: '', text: 'Nobody — just listen', selected: !role }),
+        el('option', { value: '', text: 'Nothing — just listen', selected: !role }),
+        moments.size > 0 &&
+          el('option', {
+            value: MOMENTS,
+            text: `Key moments — what would you say? (${moments.size})`,
+            selected: role === MOMENTS,
+          }),
         ...cast.map((name) =>
           el('option', {
             value: name,
-            text: `${name} — ${(speakers[name]?.en || '').split('—')[0].trim()}`,
+            text: `As ${name} — ${shortName(speakers[name]?.en)}`,
             selected: role === name,
           }),
         ),
       ],
     );
+
+    const pending = [...moments.keys()].filter((p) => !inDeck(p)).length;
 
     const row = el('div', { class: 'scene-row' }, [
       playBtn,
@@ -254,24 +333,38 @@ export function mountScript({ doc, bar, body }) {
         text: '↺ From the top',
         onclick: restart,
       }),
-      el('label', { class: 'scene-role-wrap' }, [el('span', { text: 'Practise as' }), roleSel]),
+      el('label', { class: 'scene-role-wrap' }, [el('span', { text: 'Practise' }), roleSel]),
       role &&
         el('button', {
           class: 'btn ghost small',
           type: 'button',
-          text: 'Show my lines',
-          onclick: () => turns.filter((t) => t.speaker === role).forEach((t) => reveal(t.p)),
+          text: role === MOMENTS ? 'Show all answers' : 'Show my lines',
+          onclick: () => turns.filter(isMine).forEach((t) => reveal(t.p)),
+        }),
+      role === MOMENTS &&
+        el('button', {
+          class: 'btn ghost small scene-add-all',
+          type: 'button',
+          disabled: pending ? null : 'disabled',
+          text: pending
+            ? `＋ Add ${pending === moments.size ? 'all ' : ''}${pending} to review`
+            : '✓ All in review',
+          title: 'Each moment becomes a card: the situation on the front, the line on the back',
+          onclick: addAll,
         }),
     ]);
 
     bar.append(row);
 
     if (waiting) {
+      const m = moments.get(waiting.p);
       bar.append(
-        el('div', { class: 'your-turn', role: 'status' }, [
+        el('div', { class: `your-turn${m ? ' is-moment' : ''}`, role: 'status' }, [
           el('div', { class: 'yt-text' }, [
-            el('b', { text: `Your line, as ${waiting.speaker}.` }),
-            ' Say it aloud, then check it.',
+            el('b', {
+              text: m ? `What would you say? — as ${waiting.speaker}` : `Your line, as ${waiting.speaker}.`,
+            }),
+            m ? el('span', { class: 'yt-cue', text: m.cue }) : ' Say it aloud, then check it.',
           ]),
           el('div', { class: 'yt-actions' }, [
             el('button', {
@@ -293,9 +386,12 @@ export function mountScript({ doc, bar, body }) {
       bar.append(
         el('p', {
           class: 'hint scene-hint',
-          text: role
-            ? `${role}’s lines are hidden. Play the scene: it stops at each of your turns so you can say the line, then reveal it and hear it said properly.`
-            : 'Play the whole exchange aloud, or choose a role to speak one side yourself. ▶ beside any speaker plays just that line.',
+          text:
+            role === MOMENTS
+              ? `The ${moments.size} turns that decide this exchange are hidden behind a brief. Read it, say what you would say, then tap to compare — or play the scene and it stops at each one. ＋ card puts a moment into review.`
+              : role
+                ? `${role}’s lines are hidden. Play the scene: it stops at each of your turns so you can say the line, then reveal it and hear it said properly.`
+                : 'Play the whole exchange aloud, or choose what to practise: the key moments, or one speaker’s whole part. ▶ beside any speaker plays just that line.',
         }),
       );
     }
@@ -305,13 +401,8 @@ export function mountScript({ doc, bar, body }) {
   body.addEventListener('script:reveal', (e) => reveal(e.detail.p));
   body.addEventListener('script:play', (e) => playOne(e.detail.p));
 
+  decorateMoments();
   applyRole();
 
   return () => halt();
 }
-
-export function sideClass(side) {
-  return `side-${side || 'neutral'}`;
-}
-
-export { SIDE_LABEL };

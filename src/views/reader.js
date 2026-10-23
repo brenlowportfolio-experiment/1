@@ -5,7 +5,8 @@ import { el, clear, ruby, append } from '../lib/dom.js';
 import { segment, sentenceAround } from '../lib/segment.js';
 import { glossPhrase, loadGlossary, glossaryReady, SOURCE_LABEL } from '../lib/translate.js';
 import { getDoc, storyFor } from '../data/contexts/index.js';
-import { parseTurn, speakerLabel, mountScript, sideClass } from './script.js';
+import { speakerLabel, mountScript } from './script.js';
+import { parseTurn, sideClass } from '../lib/turns.js';
 import * as store from '../lib/store.js';
 import { speakerButton } from '../lib/speak.js';
 

@@ -127,6 +127,11 @@ Then run the coverage snippet above and add whatever vocabulary is missing.
 
 ## Scenes and stories
 
+Scenes live in the `dialogues` context (shown as *Scenes*), one file per story
+under `src/data/scenes/`. Each file exports a `story` and its `docs`; add the
+file to `SOURCES` in `contexts/dialogues.js` and the library, story badges and
+reader footer pick it up.
+
 A document with `dialogue: true` and a `speakers` map is rendered as a script.
 Each paragraph is one turn, written `说话人：台词` with a full-width colon; the
 prefix must be a key in `speakers` (at most eight characters), and a paragraph
@@ -142,20 +147,61 @@ const SPEAKERS = {
 };
 ```
 
-`side` is `claimant`, `respondent` or `neutral` and sets the label colour.
-Voices and pitches are assigned in order of first appearance in each scene.
+`side` sets the label colour. Name sides for what they are — `claimant` /
+`respondent`, `buyer` / `seller`, `employee` / `employer` — and `neutral` for
+judges, arbitrators and mediators; the first of each pair is blue, the second
+red. The part of `en` before the first dash (or comma) is the name shown in the
+Practise menu. Voices and pitches are assigned in order of first appearance.
 
 Scenes earn their place by conflict: an objection sustained, a concession
 extracted, a witness who has to change an answer. Write every turn as something
 a practitioner would actually say aloud — shorter sentences than a judgment,
 but the same terms of art.
 
-A **story** is an ordered list of document ids in `STORIES` in
-`contexts/index.js`. Its parts may live in different contexts — 宏图诉瑞泽 ends
-in a judgment — and the library badges and reader footer follow it
-automatically. When a story ends in a document, keep every fact in the scenes
-consistent with it: dates, sums, which arguments succeed and which the court
-rejects.
+### Key moments
+
+`moments` marks the turns worth producing yourself. Each becomes a "what would
+you say?" brief in the scene and can become a review card.
+
+```js
+moments: [
+  {
+    p: 15,                 // paragraph index of the turn
+    who: '张律师',          // must be that turn's speaker — guards against drift
+    cue: 'He hedges: “basically… on the day”. Don’t let the hedge stand — demand a straight answer.',
+    en: 'What does “basically” mean? Please answer the question directly.',
+    keys: ['正面回答'],     // phrases the answer turns on; each must occur in the line
+  },
+],
+```
+
+Write the `cue` as a brief, not a translation: what just happened and what the
+speaker has to achieve, so there is more than one good answer. `en` is the
+translation shown after the attempt. Pick the turns that decide something —
+four to nine a scene — and give the neutral and opposing roles some too: an
+objection or a ruling is as worth owning as a question.
+
+Inserting a paragraph shifts every `p` after it. Run the checker after any
+edit to a scene:
+
+```
+node tools/check-scenes.mjs
+```
+
+It confirms that every turn's speaker exists, every moment points at the
+speaker it names, every key phrase occurs in its line, every story part
+exists, and every word in the scenes is in the dictionary.
+
+### Stories
+
+A **story** is an ordered list of document ids. Its parts may live in
+different contexts — 宏图诉瑞泽 ends in a judgment; 收购锦阳科技 alternates
+scenes with emails and ends in a contract — and the library lays the scenes
+out story by story, with the full route linking out to the rest. When a story
+passes through a document, keep every fact in the scenes consistent with it:
+dates, sums, clause numbers, which arguments succeed and which are rejected.
+A stage direction at the end of a scene, such as
+`（判决书见“裁判文书”：劳动争议二审民事判决书）`, tells the reader where to go next.
 
 ## Verbatim contexts
 

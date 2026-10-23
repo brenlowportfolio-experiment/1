@@ -5,6 +5,7 @@ import * as store from '../lib/store.js';
 import { GRADE, isDue, schedule, previewIntervals, shuffle, daysUntil } from '../lib/srs.js';
 import { getDoc } from '../data/contexts/index.js';
 import { speakerButton, stop as stopSpeech } from '../lib/speak.js';
+import { resolveMoment, sayFace, sayAnswer } from './saycard.js';
 
 export function buildQueue() {
   const s = store.getSettings();
@@ -144,23 +145,35 @@ export function render(root, { navigate }) {
       label: `Hear ${card.term}`,
     });
 
-    const front = el('div', { class: 'card-face' }, [
-      ruby(card.term, card.pinyin, { size: 'xl' }),
-      el('div', { class: 'face-speak' }, [say()]),
-    ]);
+    // A "what would you say?" card runs the other way: situation in front,
+    // the Chinese as the answer. Its source sentence *is* the answer, so it
+    // has no context quote to peek at — the answer side links to the scene.
+    const isSay = card.kind === 'say';
+    const moment = isSay ? resolveMoment(card) : null;
 
-    const back = el('div', { class: 'card-back', hidden: 'hidden' });
-    append(
-      back,
-      el('div', { class: 'answer-pinyin' }, [card.pinyin, say()]),
-      el('div', { class: 'answer-meaning', text: card.meaning || '—' }),
-      card.note && el('div', { class: 'answer-note', text: card.note }),
-    );
+    let front;
+    let back;
+    if (isSay) {
+      front = sayFace(card, moment);
+      back = sayAnswer(card, moment, { navigate });
+    } else {
+      front = el('div', { class: 'card-face' }, [
+        ruby(card.term, card.pinyin, { size: 'xl' }),
+        el('div', { class: 'face-speak' }, [say()]),
+      ]);
+      back = el('div', { class: 'card-back', hidden: 'hidden' });
+      append(
+        back,
+        el('div', { class: 'answer-pinyin' }, [card.pinyin, say()]),
+        el('div', { class: 'answer-meaning', text: card.meaning || '—' }),
+        card.note && el('div', { class: 'answer-note', text: card.note }),
+      );
+    }
 
     // The context toggle: see the phrase back in the hypothetical it came from.
     // A card added by hand has no source unless its author wrote an example
     // sentence, so the button only appears when there is something to show.
-    const quotable = card.sources.filter((s) => s.sentence);
+    const quotable = isSay ? [] : card.sources.filter((s) => s.sentence);
     const ctxWrap = el('div', { class: 'card-context', hidden: 'hidden' });
     const ctxBtn = quotable.length
       ? el('button', {
@@ -197,7 +210,7 @@ export function render(root, { navigate }) {
 
     const revealBtn = el('button', {
       class: 'btn primary wide',
-      text: 'Show meaning',
+      text: isSay ? 'Show what was said' : 'Show meaning',
       onclick: reveal,
     });
 
@@ -226,11 +239,13 @@ export function render(root, { navigate }) {
     }
 
     cardEl = el('div', {
-      class: `card${settings.showPinyinOnFront ? '' : ' hide-pinyin'}`,
+      class: `card${isSay ? ' say' : ''}${settings.showPinyinOnFront ? '' : ' hide-pinyin'}`,
     }, [
         el('div', { class: 'card-meta' }, [
           el('span', { class: `pill ${card.srs.state}`, text: stateLabel(card.srs) }),
-          card.sources[0]?.docTitle
+          isSay
+            ? el('span', { class: 'pill quiet', text: `as ${moment.speaker}` })
+            : card.sources[0]?.docTitle
             ? el('span', { class: 'pill quiet', text: card.sources[0].docTitle })
             : el('span', { class: 'pill quiet', text: '手动添加' }),
         ]),

@@ -97,7 +97,14 @@ export function clampSchedules(max) {
 }
 
 export function findCardByTerm(term) {
-  return state.cards.find((c) => c.term === term) || null;
+  // A "what would you say?" card's term is a whole spoken line, not a word —
+  // it must never be mistaken for vocabulary.
+  return state.cards.find((c) => c.kind !== 'say' && c.term === term) || null;
+}
+
+/** The "what would you say?" card for one turn of one scene, if made. */
+export function findMomentCard(momentKey) {
+  return state.cards.find((c) => c.kind === 'say' && c.momentKey === momentKey) || null;
 }
 
 /**
@@ -105,6 +112,7 @@ export function findCardByTerm(term) {
  *   source: { docId, contextId, docTitle, paraIndex, start, end, sentence }
  */
 export function addCard(input) {
+  if (input.kind === 'say') return addMomentCard(input);
   const existing = findCardByTerm(input.term);
   if (existing) {
     // Don't duplicate — attach the new sighting as another context instead.
@@ -127,6 +135,40 @@ export function addCard(input) {
     pinyin: input.pinyin || '',
     meaning: input.meaning || '',
     note: input.note || '',
+    sources: input.source ? [input.source] : [],
+    created: new Date().toISOString(),
+    suspended: false,
+    srs: newSchedule(),
+  };
+  state.cards.push(card);
+  persist();
+  return { card, created: true };
+}
+
+/**
+ * A production card: the face is a situation and what was just said; the
+ * answer is the line a lawyer actually said there. One card per moment —
+ * adding it twice is a no-op.
+ * @param {{momentKey, term, meaning, cue, speaker, speakerEn, keys, lead, source}} input
+ */
+function addMomentCard(input) {
+  const existing = findMomentCard(input.momentKey);
+  if (existing) return { card: existing, created: false };
+  const card = {
+    id: `c_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`,
+    kind: 'say',
+    momentKey: input.momentKey,
+    term: input.term,
+    pinyin: '',
+    meaning: input.meaning || '',
+    note: '',
+    // A snapshot, so the card still works if the scene is later rewritten;
+    // review prefers the live scene when the moment is still there.
+    cue: input.cue,
+    speaker: input.speaker,
+    speakerEn: input.speakerEn || '',
+    keys: input.keys || [],
+    lead: input.lead || [],
     sources: input.source ? [input.source] : [],
     created: new Date().toISOString(),
     suspended: false,

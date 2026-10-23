@@ -38,7 +38,14 @@ export function render(root, { navigate, search: initialQuery }) {
   });
 
   const filters = el('div', { class: 'chips' });
-  [['all', 'All'], ['due', 'Due'], ['new', 'New'], ['manual', 'By hand'], ...CONTEXTS.map((c) => [c.id, c.name])].forEach(
+  [
+    ['all', 'All'],
+    ['due', 'Due'],
+    ['new', 'New'],
+    ['manual', 'By hand'],
+    ['say', 'What would you say?'],
+    ...CONTEXTS.map((c) => [c.id, c.name]),
+  ].forEach(
     ([id, label]) => {
       filters.append(
         el('button', {
@@ -81,11 +88,12 @@ export function render(root, { navigate, search: initialQuery }) {
     if (filter === 'due') cards = cards.filter((c) => isDue(c.srs) && !c.suspended);
     else if (filter === 'new') cards = cards.filter((c) => c.srs.state === 'new');
     else if (filter === 'manual') cards = cards.filter((c) => c.sources.every((s) => !s.docId));
+    else if (filter === 'say') cards = cards.filter((c) => c.kind === 'say');
     else if (filter !== 'all') cards = cards.filter((c) => c.sources.some((s) => s.contextId === filter));
 
     if (query) {
       cards = cards.filter((c) =>
-        [c.term, c.pinyin, c.meaning, c.note].join(' ').toLowerCase().includes(query),
+        [c.term, c.pinyin, c.meaning, c.note, c.cue, c.speaker].join(' ').toLowerCase().includes(query),
       );
     }
 
@@ -115,22 +123,32 @@ export function render(root, { navigate, search: initialQuery }) {
     const meaningInput = el('input', {
       class: 'row-meaning',
       value: c.meaning,
-      placeholder: 'meaning',
+      placeholder: c.kind === 'say' ? 'translation of the model answer' : 'meaning',
       onchange: (e) => {
         store.updateCard(c.id, { meaning: e.target.value.trim() });
         toast('Saved');
       },
     });
 
+    // A "what would you say?" card is a situation, not a word: show the
+    // brief, with the line it should produce underneath.
+    const termCell = c.kind === 'say'
+      ? el('div', { class: 'row-term row-say' }, [
+          el('span', { class: 'say-tag', text: `What would you say? · ${c.speaker}` }),
+          el('span', { class: 'row-say-cue', text: c.cue }),
+          el('span', { class: 'row-say-line zh', text: c.term }),
+        ])
+      : el('div', { class: 'row-term' }, [
+          ruby(c.term, c.pinyin),
+          speakerButton(() => c.term, {
+            el,
+            rate: () => store.getSettings().speechRate || 0.85,
+            label: `Hear ${c.term}`,
+          }),
+        ]);
+
     node.append(
-      el('div', { class: 'row-term' }, [
-        ruby(c.term, c.pinyin),
-        speakerButton(() => c.term, {
-          el,
-          rate: () => store.getSettings().speechRate || 0.85,
-          label: `Hear ${c.term}`,
-        }),
-      ]),
+      termCell,
       el('div', { class: 'row-body' }, [
         meaningInput,
         el(
@@ -182,7 +200,8 @@ export function render(root, { navigate, search: initialQuery }) {
           title: 'Delete',
           text: '✕',
           onclick: () => {
-            if (confirm(`Delete “${c.term}”?`)) {
+            const name = c.kind === 'say' ? `this “what would you say?” card (${c.speaker})` : `“${c.term}”`;
+            if (confirm(`Delete ${name}?`)) {
               store.deleteCard(c.id);
               paint();
             }

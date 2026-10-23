@@ -685,7 +685,7 @@ html.no-speech .speak-btn { display: none !important; }
 .scene-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .scene-role-wrap { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink-3); margin-left: auto; }
 .scene-role {
-  font: inherit; font-size: 13px; padding: 6px 9px; border-radius: 7px; max-width: 260px;
+  font: inherit; font-size: 13px; padding: 6px 9px; border-radius: 7px; max-width: 260px; min-width: 0;
   border: 1px solid var(--line-2); background: var(--paper); color: var(--ink);
 }
 .scene-hint { margin: 8px 0 0; }
@@ -706,8 +706,11 @@ html.no-speech .speak-btn { display: none !important; }
 .doc-body.script .para.turn { display: grid; grid-template-columns: 6.2em 1fr; column-gap: 14px; align-items: baseline; }
 .speaker { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-family: var(--zh); }
 .speaker b { font-weight: 600; font-size: .86em; white-space: nowrap; }
-.side-claimant .speaker b { color: var(--blue); }
-.side-respondent .speaker b { color: var(--accent); }
+/* Two sides and the neutrals. A story names its sides for what they are —
+   claimant/respondent, buyer/seller, employee/employer — and they share two
+   colours, so "our side" reads the same way in every story. */
+.side-claimant .speaker b, .side-buyer .speaker b, .side-employee .speaker b { color: var(--blue); }
+.side-respondent .speaker b, .side-seller .speaker b, .side-employer .speaker b { color: var(--accent); }
 .side-neutral .speaker b { color: var(--ink-2); }
 .turn-play {
   border: 0; background: none; cursor: pointer; padding: 1px 4px; border-radius: 4px;
@@ -748,9 +751,125 @@ html.no-speech .turn-play { display: none; }
 .story-next { margin-left: auto; }
 
 @media (max-width: 700px) {
-  .scene-bar { top: 104px; margin: -4px -6px 18px; }
+  .scene-bar { position: static; margin: -4px -6px 18px; }
+  .scene-bar.live { position: sticky; top: 104px; }
+  .scene-bar.live .scene-hint { display: none; }
   .scene-role-wrap { margin-left: 0; width: 100%; }
-  .scene-role { flex: 1; max-width: none; }
+  .scene-role { flex: 1; max-width: none; width: 100%; }
   .doc-body.script .para.turn { grid-template-columns: 1fr; }
   .speaker { margin-bottom: 2px; }
+}
+
+/* ── key moments: "what would you say?" ─────────────────────────────── */
+/* The brief and the translation sit under the line, in the line's column. */
+.doc-body.script .para.turn > .moment-cue,
+.doc-body.script .para.turn > .moment-en { grid-column: 2; }
+
+.moment-cue { display: none; margin: 4px 0 2px; font-family: var(--ui); font-size: 13.5px; line-height: 1.5; color: var(--ink-2); }
+.para.masked.has-moment .moment-cue { display: block; }
+.para.masked.has-moment .reveal-hint { display: none; }
+.moment-tag {
+  display: inline-block; margin-right: 8px; padding: 1px 8px; border-radius: 999px;
+  font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase;
+  color: var(--accent); border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--line));
+}
+.moment-tap { display: block; margin-top: 3px; font-size: 11px; color: var(--accent); }
+
+.moment-en { display: none; margin: 3px 0 2px; font-family: var(--ui); font-size: 13px; font-style: italic; color: var(--ink-3); }
+.para.moment-open .moment-en { display: block; }
+
+/* A quiet marker on every moment turn, masked or not, so the turns worth
+   owning stand out on a plain read too. */
+.para.has-moment:not(.masked) { box-shadow: inset 2px 0 0 color-mix(in srgb, var(--warn) 55%, transparent); }
+.moment-add {
+  border: 1px solid var(--line-2); background: var(--card); color: var(--ink-3);
+  font: 600 10px/1 var(--ui); padding: 3px 6px; border-radius: 5px; cursor: pointer; white-space: nowrap;
+}
+.moment-add:hover { border-color: var(--accent); color: var(--accent); }
+.moment-add.added { color: var(--ok); border-color: color-mix(in srgb, var(--ok) 40%, var(--line)); }
+
+.your-turn.is-moment { align-items: flex-start; }
+.yt-cue { display: block; margin-top: 3px; color: var(--ink-2); font-size: 13.5px; line-height: 1.5; max-width: 60ch; }
+.scene-add-all:disabled { opacity: .7; color: var(--ok); cursor: default; }
+
+/* ── library: stories within the scenes context ─────────────────────── */
+.story-head { margin: 22px 0 10px; }
+.story-head:first-of-type { margin-top: 8px; }
+.story-head h3 { margin: 0; font-family: var(--zh); font-size: 18px; letter-spacing: .04em; font-weight: 600; }
+.story-blurb { margin: 4px 0 8px; color: var(--ink-2); font-size: 13.5px; max-width: 68ch; }
+.story-route { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 4px 2px; align-items: center; counter-reset: route; }
+.story-route li { display: flex; align-items: center; counter-increment: route; }
+.story-route li + li::before { content: "→"; color: var(--ink-3); font-size: 12px; margin: 0 4px; }
+.route-step {
+  display: inline-flex; align-items: baseline; gap: 6px;
+  border: 1px solid var(--line); background: var(--card); color: var(--ink-2);
+  font: 13px/1.3 var(--zh); padding: 4px 9px; border-radius: 999px; cursor: pointer;
+}
+.route-step::before { content: counter(route); font: 600 10px var(--ui); color: var(--ink-3); }
+.route-step:hover { border-color: var(--blue); color: var(--blue); }
+.route-step.is-doc { border-style: dashed; }
+.route-ctx { font: 10px var(--ui); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); }
+
+.doc-card-foot { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-top: 6px; }
+.doc-card-foot .doc-card-count { margin-top: 0; }
+.moment-count { font-size: 12px; color: var(--warn); white-space: nowrap; }
+
+/* ── review: the "what would you say?" card ─────────────────────────── */
+.zh { font-family: var(--zh); }
+.ruby-line { display: inline-flex; flex-wrap: wrap; align-items: flex-end; gap: 0 1px; text-align: left; }
+.ruby-line .ruby-pinyin { font-size: .62em; }
+.rl-plain { font-size: 1em; line-height: 1.2; align-self: flex-end; }
+.rl-key { background: color-mix(in srgb, var(--warn) 18%, transparent); border-radius: 3px; }
+
+.card.say .card-face { text-align: left; padding: 6px 0 20px; }
+.say-scene { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+.say-tag {
+  display: inline-block; padding: 1px 8px; border-radius: 999px;
+  font: 10.5px/1.6 var(--ui); letter-spacing: .06em; text-transform: uppercase;
+  color: var(--accent); border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--line));
+}
+.say-where { font-family: var(--zh); font-size: 13.5px; color: var(--ink-3); }
+
+.say-lead { display: flex; flex-direction: column; gap: 10px; padding: 14px 16px; border-radius: 8px; background: var(--paper); border: 1px solid var(--line); }
+.say-turn, .say-model { display: grid; grid-template-columns: 4.6em 1fr; column-gap: 12px; align-items: baseline; }
+.say-who { font-family: var(--zh); font-size: 14px; font-weight: 600; white-space: nowrap; }
+.say-turn .say-who, .say-model .say-who { color: var(--ink-2); }
+.side-claimant .say-who, .side-buyer .say-who, .side-employee .say-who { color: var(--blue); }
+.side-respondent .say-who, .side-seller .say-who, .side-employer .say-who { color: var(--accent); }
+.say-text { display: flex; align-items: flex-end; gap: 8px; font-size: 19px; }
+.say-text .speak-btn { width: 26px; height: 26px; font-size: 12px; margin-bottom: 2px; }
+.say-stage { text-align: center; font-style: italic; font-family: var(--zh); color: var(--ink-3); font-size: 14px; }
+
+.say-brief { margin-top: 18px; }
+.say-you { font-size: 13px; color: var(--ink-3); }
+.say-you b { color: var(--ink); font-size: 15px; }
+.say-cue { margin: 6px 0 0; font-size: 17px; line-height: 1.55; color: var(--ink); }
+.say-do { margin: 10px 0 0; font-size: 12.5px; color: var(--accent); }
+
+.card.say .card-back { text-align: left; }
+.say-model { padding: 14px 16px; border-radius: 8px; border: 1px solid color-mix(in srgb, var(--ok) 35%, var(--line)); background: color-mix(in srgb, var(--ok) 5%, var(--card)); }
+.say-model .say-text { font-size: 21px; }
+.say-en { margin-top: 12px; font-size: 16px; color: var(--ink-2); }
+.say-keys { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 14px; }
+.say-keys-label { font-size: 12px; color: var(--ink-3); margin-right: 2px; }
+.say-key {
+  display: inline-flex; flex-direction: column; align-items: center; padding: 3px 10px; border-radius: 7px;
+  background: color-mix(in srgb, var(--warn) 14%, transparent);
+}
+.say-key .zh { font-size: 16px; }
+.say-key-py { font-size: 10.5px; color: var(--accent); }
+.say-open { display: inline-block; margin-top: 14px; font-size: 13px; }
+
+/* ── deck: a moment card's row ──────────────────────────────────────── */
+.row-say { flex-direction: column; align-items: stretch; gap: 4px; max-width: 34ch; min-width: 0; }
+.row-say .say-tag { align-self: flex-start; }
+.row-say-cue { font-size: 13px; line-height: 1.45; color: var(--ink-2); }
+.row-say-line { display: block; min-width: 0; font-size: 14px; color: var(--ink-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+@media (max-width: 700px) {
+  .say-turn, .say-model { grid-template-columns: 1fr; row-gap: 2px; }
+  .say-text { font-size: 17px; }
+  .say-model .say-text { font-size: 18px; }
+  .say-cue { font-size: 15.5px; }
+  .row-say { max-width: none; }
 }
