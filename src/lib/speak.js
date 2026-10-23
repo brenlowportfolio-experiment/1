@@ -65,6 +65,21 @@ export function pickVoice() {
   return score(best) > -100 ? best : null;
 }
 
+/**
+ * Every usable Mandarin voice, best first. A dialogue gives each speaker a
+ * different one where the device has several — Windows has Huihui, Yaoyao and
+ * Kangkang; Edge and newer Macs have more — and falls back to pitch where it
+ * has only one.
+ */
+export function mandarinVoices() {
+  const best = pickVoice();
+  if (!best) return [];
+  const zh = voices.filter(
+    (v) => /^zh[-_]CN|^cmn|^zh$/i.test(v.lang) && !/Cantonese|粤|Sin-ji|Sinji|Hong Kong/i.test(v.name),
+  );
+  return [best, ...zh.filter((v) => v !== best)];
+}
+
 /** Does the browser have a speech engine at all? (Controls whether buttons show.) */
 export function available() {
   return !!synth;
@@ -94,7 +109,7 @@ let current = null;
  * @param {{rate?: number, onend?: Function, onfail?: Function}} opts
  *   onfail(reason) is called if the browser refuses or nothing starts.
  */
-export function speak(text, { rate = 0.85, onend, onfail } = {}) {
+export function speak(text, { rate = 0.85, pitch = 1, voice: chosen, onstart, onend, onfail } = {}) {
   if (!synth) {
     onfail?.('no-engine');
     return false;
@@ -115,7 +130,7 @@ export function speak(text, { rate = 0.85, onend, onfail } = {}) {
   } catch {}
 
   const u = new SpeechSynthesisUtterance(clean);
-  const voice = pickVoice();
+  const voice = chosen || pickVoice();
   if (voice) {
     u.voice = voice;
     u.lang = voice.lang;
@@ -125,6 +140,7 @@ export function speak(text, { rate = 0.85, onend, onfail } = {}) {
     u.lang = 'zh-CN';
   }
   u.rate = rate;
+  u.pitch = pitch;
 
   let started = false;
   let settled = false;
@@ -138,6 +154,7 @@ export function speak(text, { rate = 0.85, onend, onfail } = {}) {
 
   u.onstart = () => {
     started = true;
+    onstart?.();
   };
   u.onend = () => finish(false);
   u.onerror = (e) => {

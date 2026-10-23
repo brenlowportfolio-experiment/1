@@ -12,9 +12,10 @@ import emails from './emails.js';
 import contracts from './contracts.js';
 import judgments from './judgments.js';
 import statutes from './statutes.js';
+import dialogues from './dialogues.js';
 import * as store from '../../lib/store.js';
 
-export const CONTEXTS = [emails, contracts, judgments, statutes];
+export const CONTEXTS = [emails, contracts, judgments, statutes, dialogues];
 
 function decorate(doc, ctx) {
   return { ...doc, contextId: ctx.id, contextName: ctx.name };
@@ -62,4 +63,35 @@ export function contextsWithDocs() {
       ...mine.filter((d) => d.contextId === ctx.id),
     ],
   }));
+}
+
+// ── stories ────────────────────────────────────────────────────────────────
+//
+// A story is an ordered run of documents about the same people and the same
+// dispute, which may cross contexts: 宏图诉瑞泽 begins as dialogue and ends as
+// a judgment in Judgments. The reader uses this to show where a document sits
+// and to step to the next part.
+
+export const STORIES = [
+  {
+    id: 'hongtu',
+    titleZh: '宏图诉瑞泽',
+    title: 'Hongtu v Ruize',
+    parts: ['dl-interview', 'dl-mediation', 'dl-cross', 'dl-closing', 'jg-sale-contract'],
+  },
+];
+
+/** @returns {{story, index, prev, next} | null} */
+export function storyFor(docId) {
+  for (const story of STORIES) {
+    const index = story.parts.indexOf(docId);
+    if (index === -1) continue;
+    return {
+      story,
+      index,
+      prev: index > 0 ? getDoc(story.parts[index - 1]) : null,
+      next: index < story.parts.length - 1 ? getDoc(story.parts[index + 1]) : null,
+    };
+  }
+  return null;
 }

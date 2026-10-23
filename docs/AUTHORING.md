@@ -125,6 +125,38 @@ A prompt that produces usable output:
 
 Then run the coverage snippet above and add whatever vocabulary is missing.
 
+## Scenes and stories
+
+A document with `dialogue: true` and a `speakers` map is rendered as a script.
+Each paragraph is one turn, written `说话人：台词` with a full-width colon; the
+prefix must be a key in `speakers` (at most eight characters), and a paragraph
+wrapped entirely in `（…）` is a stage direction. The prefix stays in the stored
+text — card offsets and deep links depend on it — and is drawn as a label, so
+it is never glossed or selected.
+
+```js
+const SPEAKERS = {
+  张律师: { en: 'Zhang Xiaoyun — counsel for the claimant', side: 'claimant' },
+  王律师: { en: 'Wang — counsel for the respondent', side: 'respondent' },
+  审判长: { en: 'Presiding judge', side: 'neutral' },
+};
+```
+
+`side` is `claimant`, `respondent` or `neutral` and sets the label colour.
+Voices and pitches are assigned in order of first appearance in each scene.
+
+Scenes earn their place by conflict: an objection sustained, a concession
+extracted, a witness who has to change an answer. Write every turn as something
+a practitioner would actually say aloud — shorter sentences than a judgment,
+but the same terms of art.
+
+A **story** is an ordered list of document ids in `STORIES` in
+`contexts/index.js`. Its parts may live in different contexts — 宏图诉瑞泽 ends
+in a judgment — and the library badges and reader footer follow it
+automatically. When a story ends in a document, keep every fact in the scenes
+consistent with it: dates, sums, which arguments succeed and which the court
+rejects.
+
 ## Verbatim contexts
 
 `statutes` is the one context whose documents are *not* hypothetical, and the

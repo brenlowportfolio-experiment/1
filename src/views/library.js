@@ -1,7 +1,7 @@
 // Library — browse contexts and the hypotheticals inside them.
 
 import { el, clear } from '../lib/dom.js';
-import { contextsWithDocs } from '../data/contexts/index.js';
+import { contextsWithDocs, storyFor } from '../data/contexts/index.js';
 import * as store from '../lib/store.js';
 
 export function render(root, { navigate }) {
@@ -52,6 +52,7 @@ export function render(root, { navigate }) {
             el('span', { class: 'doc-card-level' }, [
               d.level,
               d.custom && el('span', { class: 'mine-tag', text: 'yours' }),
+              storyBadge(d.id),
             ]),
             el('span', { class: 'doc-card-zh', text: d.titleZh }),
             el('span', { class: 'doc-card-en', text: d.title }),
@@ -72,7 +73,19 @@ export function render(root, { navigate }) {
     el('p', {
       class: 'corpus-note',
       text:
-        'Emails, contracts and judgments here are hypothetical — written to mirror the language of real PRC practice without reproducing any actual document. Statutes are the exception: enacted text carries no copyright and its exact wording is the thing being learned, so it is quoted as written.',
+        'Emails, contracts, judgments and the hearing scenes here are hypothetical — written to mirror the language of real PRC practice without reproducing any actual document or proceeding. Statutes are the exception: enacted text carries no copyright and its exact wording is the thing being learned, so it is quoted as written.',
     }),
   );
+}
+
+/** "宏图诉瑞泽 · 2/5" on documents that belong to a story — including the
+ *  judgment, which lives in another context but ends the same story. */
+function storyBadge(id) {
+  const st = storyFor(id);
+  if (!st) return null;
+  return el('span', {
+    class: 'story-tag',
+    title: `${st.story.title}, part ${st.index + 1} of ${st.story.parts.length}`,
+    text: `${st.story.titleZh} · ${st.index + 1}/${st.story.parts.length}`,
+  });
 }

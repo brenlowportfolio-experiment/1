@@ -4,7 +4,8 @@
 import { el, clear, ruby, append } from '../lib/dom.js';
 import { segment, sentenceAround } from '../lib/segment.js';
 import { glossPhrase, loadGlossary, glossaryReady, SOURCE_LABEL } from '../lib/translate.js';
-import { getDoc } from '../data/contexts/index.js';
+import { getDoc, storyFor } from '../data/contexts/index.js';
+import { parseTurn, speakerLabel, mountScript, sideClass } from './script.js';
 import * as store from '../lib/store.js';
 import { speakerButton } from '../lib/speak.js';
 
@@ -101,18 +102,47 @@ export function render(root, { docId, focus } = {}) {
         class: 'doc-disclaimer',
         text: doc.verbatim
           ? 'Quoted verbatim. This text is reproduced as written, not rewritten for practice.'
-          : 'Hypothetical document. Parties, courts, case numbers and facts are invented for language practice.',
+          : doc.dialogue
+            ? 'Hypothetical scene. The people, firms, court and facts are invented for language practice.'
+            : 'Hypothetical document. Parties, courts, case numbers and facts are invented for language practice.',
       }),
     ]),
   );
 
-  const body = el('div', { class: 'doc-body' });
+  const isScript = !!(doc.dialogue && doc.speakers);
+  const body = el('div', { class: `doc-body${isScript ? ' script' : ''}` });
+  if (isScript) page.classList.add('script-doc');
 
   paraTokens.forEach((tokens, p) => {
     const para = el('p', { class: 'para', dataset: { p } });
+    // In a script the line lives in its own span, so the speaker label can sit
+    // beside it; in prose the paragraph holds the tokens directly.
+    let host = para;
+    let skipUntil = 0;
+
+    if (isScript) {
+      const turn = parseTurn(doc.paragraphs[p], doc.speakers);
+      if (turn.stage) para.classList.add('stage');
+      if (turn.speaker) {
+        para.classList.add('turn', sideClass(turn.side));
+        para.dataset.speaker = turn.speaker;
+        para.append(
+          speakerLabel(turn, () =>
+            body.dispatchEvent(new CustomEvent('script:play', { detail: { p } })),
+          ),
+        );
+        host = el('span', { class: 'line' });
+        para.append(host);
+        // The 说话人： prefix stays in the stored text — offsets, cards and deep
+        // links all depend on it — and is simply not drawn as words.
+        skipUntil = turn.prefixEnd;
+      }
+    }
+
     tokens.forEach((t, i) => {
+      if (t.end <= skipUntil) return;
       if (!t.han) {
-        para.append(el('span', { class: 'tok inert', text: t.text }));
+        host.append(el('span', { class: 'tok inert', text: t.text }));
         return;
       }
       const known = !!store.findCardByTerm(t.text);
@@ -121,15 +151,35 @@ export function render(root, { docId, focus } = {}) {
         text: t.text,
         dataset: { p, i },
       });
-      para.append(span);
+      host.append(span);
     });
     body.append(para);
   });
 
+  // The scene bar sits between the heading and the script, and sticks to the
+  // top while scrolling so Stop and the your-turn prompt are always in reach.
+  const sceneBar = isScript ? el('div', { class: 'scene-bar' }) : null;
+  if (sceneBar) page.append(sceneBar);
   page.append(body);
 
+  const story = storyFor(doc.id);
   page.append(
     el('footer', { class: 'doc-foot' }, [
+      story &&
+        el('nav', { class: 'story-nav', 'aria-label': 'Story' }, [
+          el('div', { class: 'story-where' }, [
+            el('b', { text: story.story.titleZh }),
+            ` · ${story.story.title} · Part ${story.index + 1} of ${story.story.parts.length}`,
+          ]),
+          el('div', { class: 'story-steps' }, [
+            story.prev
+              ? el('a', { class: 'story-prev', href: `#/read/${story.prev.id}` }, ['← ', story.prev.titleZh])
+              : el('span'),
+            story.next
+              ? el('a', { class: 'story-next', href: `#/read/${story.next.id}` }, [story.next.titleZh, ' →'])
+              : el('span', { class: 'hint', text: 'The end of the story.' }),
+          ]),
+        ]),
       el('p', {
         class: 'hint',
         html:
@@ -145,6 +195,11 @@ export function render(root, { docId, focus } = {}) {
     const node = ev.target.closest?.('.tok');
     if (!node || node.classList.contains('inert')) return null;
     return { node, p: +node.dataset.p, i: +node.dataset.i };
+  }
+
+  /** A line hidden for role practice — hovering it must not give it away. */
+  function maskedParaAt(ev) {
+    return ev.target.closest?.('.para.masked') || null;
   }
 
   function paintSelection() {
@@ -288,6 +343,7 @@ export function render(root, { docId, focus } = {}) {
 
   body.addEventListener('mouseover', (ev) => {
     if (dragging || !popup.hidden) return;
+    if (maskedParaAt(ev)) return scheduleHide();
     const t = tokenAt(ev);
     if (!t) return scheduleHide();
     const tok = paraTokens[t.p][t.i];
@@ -313,6 +369,13 @@ export function render(root, { docId, focus } = {}) {
   body.addEventListener('mouseleave', scheduleHide);
 
   body.addEventListener('mousedown', (ev) => {
+    const masked = maskedParaAt(ev);
+    if (masked) {
+      // On a hidden line, a click means "show me" — not the start of a drag.
+      ev.preventDefault();
+      body.dispatchEvent(new CustomEvent('script:reveal', { detail: { p: +masked.dataset.p } }));
+      return;
+    }
     const t = tokenAt(ev);
     if (!t) return;
     ev.preventDefault();
@@ -365,7 +428,10 @@ export function render(root, { docId, focus } = {}) {
     });
   }
 
+  const unmountScript = sceneBar ? mountScript({ doc, bar: sceneBar, body }) : null;
+
   return () => {
+    unmountScript?.();
     document.removeEventListener('mouseup', endDrag);
     document.removeEventListener('mousedown', onOutside);
     hideTooltip();

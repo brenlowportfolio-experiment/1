@@ -667,3 +667,90 @@ html.no-speech .speak-btn { display: none !important; }
 .speech-notice b { display: block; margin-bottom: 4px; }
 .voice-status { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: -4px 0 0; }
 .voice-status .hint { margin: 0; flex: 1 1 260px; }
+
+/* ── scripts: hearings and mediation ────────────────────────────────── */
+.story-tag {
+  margin-left: 8px; font-size: 9.5px; letter-spacing: .06em; padding: 1px 6px;
+  border-radius: 3px; background: color-mix(in srgb, var(--blue) 14%, transparent); color: var(--blue);
+  font-family: var(--zh); text-transform: none;
+}
+
+.scene-bar {
+  position: sticky; top: 62px; z-index: 20;
+  margin: -6px -14px 22px; padding: 12px 14px;
+  background: color-mix(in srgb, var(--card) 94%, transparent);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--line); border-radius: 10px;
+}
+.scene-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.scene-role-wrap { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink-3); margin-left: auto; }
+.scene-role {
+  font: inherit; font-size: 13px; padding: 6px 9px; border-radius: 7px; max-width: 260px;
+  border: 1px solid var(--line-2); background: var(--paper); color: var(--ink);
+}
+.scene-hint { margin: 8px 0 0; }
+
+.your-turn {
+  margin-top: 10px; padding: 11px 13px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  background: color-mix(in srgb, var(--accent) 9%, var(--card));
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line));
+  animation: yt-in .2s ease;
+}
+@keyframes yt-in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+.yt-text { font-size: 13.5px; }
+.yt-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* A turn: speaker label in a narrow column, the line beside it. */
+.doc-body.script .para { margin: 0 0 .55em; padding: 4px 8px; border-radius: 8px; transition: background .2s ease; }
+.doc-body.script .para.turn { display: grid; grid-template-columns: 6.2em 1fr; column-gap: 14px; align-items: baseline; }
+.speaker { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-family: var(--zh); }
+.speaker b { font-weight: 600; font-size: .86em; white-space: nowrap; }
+.side-claimant .speaker b { color: var(--blue); }
+.side-respondent .speaker b { color: var(--accent); }
+.side-neutral .speaker b { color: var(--ink-2); }
+.turn-play {
+  border: 0; background: none; cursor: pointer; padding: 1px 4px; border-radius: 4px;
+  font-size: 10px; line-height: 1; color: var(--ink-3); opacity: .55;
+  transition: opacity .15s ease, background .15s ease;
+}
+.para.turn:hover .turn-play, .turn-play:focus-visible { opacity: 1; }
+.turn-play:hover { background: var(--accent-soft); color: var(--accent); }
+html.no-speech .turn-play { display: none; }
+
+.para.current { background: var(--sel); }
+.para.stage {
+  text-align: center; font-style: italic; color: var(--ink-3); font-size: .9em; margin: .9em 0;
+}
+
+/* Role practice: your lines hidden until you've said them. */
+.reveal-hint { display: none; font-family: var(--ui); font-size: 10.5px; color: var(--accent); white-space: nowrap; }
+.para.masked .reveal-hint { display: inline; }
+.para.masked .line {
+  filter: blur(7px); user-select: none; cursor: pointer;
+  transition: filter .25s ease;
+}
+.para.masked { cursor: pointer; background: color-mix(in srgb, var(--accent) 5%, transparent); }
+.para.mine:not(.masked) { box-shadow: inset 3px 0 0 color-mix(in srgb, var(--accent) 55%, transparent); }
+
+.story-nav {
+  margin-bottom: 14px; padding-bottom: 14px; border-bottom: 1px solid var(--line);
+  display: flex; flex-direction: column; gap: 8px;
+}
+.story-where { font-size: 12.5px; color: var(--ink-3); }
+.story-where b { font-family: var(--zh); color: var(--ink-2); font-weight: 600; }
+.story-steps { display: flex; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
+.story-steps a {
+  font-family: var(--zh); font-size: 14px; color: var(--blue); text-decoration: none;
+  padding: 7px 12px; border: 1px solid var(--line-2); border-radius: 8px;
+}
+.story-steps a:hover { border-color: var(--blue); }
+.story-next { margin-left: auto; }
+
+@media (max-width: 700px) {
+  .scene-bar { top: 104px; margin: -4px -6px 18px; }
+  .scene-role-wrap { margin-left: 0; width: 100%; }
+  .scene-role { flex: 1; max-width: none; }
+  .doc-body.script .para.turn { grid-template-columns: 1fr; }
+  .speaker { margin-bottom: 2px; }
+}

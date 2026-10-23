@@ -37,7 +37,7 @@ with export/import.
 ## How it works
 
 **Contexts** are registers of legal Chinese, each with its own conventions.
-Four ship today, and the design assumes more:
+Five ship today, and the design assumes more:
 
 | Context | 中文 | What it drills |
 |---|---|---|
@@ -45,8 +45,9 @@ Four ship today, and the design assumes more:
 | Contracts | 合同条款 | Operative language — 应当 / 不得 / 除非 / 但…除外, definitions, carve-outs |
 | Judgments | 裁判文书 | The fixed architecture of a civil judgment and the connectives that carry its reasoning (遂、故、据此、综上) |
 | Statutes | 法律法规 | Enacted text, quoted as written: 的-clauses as protases, 应当/不得/可以 as operators, 但是…除外 as the carve-out |
+| Hearings & Mediation | 庭审与调解 | Legal Chinese spoken under pressure: taking instructions, a mediation, cross-examination, closing argument — objections, concessions, pinning a witness down |
 
-Emails, contracts and judgments are **hypothetical** — parties, firms, courts,
+Emails, contracts, judgments and hearing scenes are **hypothetical** — parties, firms, courts,
 case numbers and facts invented, imitating the language and structure of real
 PRC practice without reproducing any actual document. **Statutes are the
 deliberate exception**, for the reasons set out under *Importing* below. See
@@ -79,6 +80,28 @@ In review, the speaker follows the pinyin. With pinyin on it's on the front;
 with pinyin off you're practising recognition, and hearing the word first would
 give away the reading, so it moves to the answer side and only appears once
 you've answered.
+
+**Scenes and the story.** *Hearings & Mediation* is talk rather than
+documents, and its four scenes are one story — 宏图诉瑞泽 (*Hongtu v Ruize*), an
+unpaid-price dispute over two CNC machines. It runs from the first client
+meeting, through a pre-action mediation that fails, to the cross-examination of
+the respondent's witness and closing argument; the fifth and last part is the
+first-instance judgment already in *Judgments*, whose every finding the scenes
+set up. Read in order, the judgment stops being a template and becomes the
+answer to an argument you've watched. Each part is tagged
+`宏图诉瑞泽 · n/5` in the library and links to the next at the foot of the page.
+
+Each line is labelled with its speaker, colour-coded by side, and reads like
+any other text — hover, select, make cards. Above the script:
+
+- **▶ Play scene** reads the whole exchange aloud, each speaker in a different
+  voice where the device has several Mandarin voices, or at a different pitch
+  where it has one. ▶ beside a speaker plays just that line.
+- **Practise as** hides one speaker's lines. Played through, the scene stops at
+  each of your turns: say the line aloud, then **Reveal & hear it** to compare
+  with the model, and the scene carries on. The role you pick stays chosen as
+  you move through the story, so you can argue the whole case as 张律师 — or
+  defend it as 王律师, or sit in the witness box.
 
 **Making cards.** Click a word, or drag across several words, to take a
 selection. The popup pre-fills pinyin and a meaning; edit it and add it. Words
@@ -284,11 +307,12 @@ src/
   views/
     library.js        browse contexts
     reader.js         read, hover, select, make cards
+    script.js         scenes: speaker labels, Play scene, Practise as
     review.js         flashcards
     deck.js           browse/edit cards, settings, data
     import.js         mine a real document, generate a hypothetical
   data/
-    dictionary.js     ~1,170 entries — glosses AND word boundaries
+    dictionary.js     ~1,460 entries — glosses AND word boundaries
     contexts/         one file per context + registry
 vendor/               pdf.js and CC-CEDICT, checked in (see vendor/NOTICE.md)
 tools/                build script for the CC-CEDICT glossary
@@ -307,6 +331,7 @@ card counts all pick it up. Adding vocabulary is a line in `dictionary.js`.
 Both are covered in [`docs/AUTHORING.md`](docs/AUTHORING.md).
 
 Natural next steps the current structure already anticipates: production cards
-(English → Chinese) alongside the recognition cards, audio, a 汉字-component
+(English → Chinese) alongside the recognition cards, more stories (a contract
+negotiation, an arbitration), a 汉字-component
 view for characters that recur across legal compounds, and generating new
 hypotheticals on demand from the prompt in the authoring doc.
